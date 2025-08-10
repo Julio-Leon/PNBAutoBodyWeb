@@ -1,0 +1,551 @@
+/* Mobile First - Appointment Component */
+
+.appointment-section {
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.section-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.section-header p {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  max-width: 90%;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.appointment-form {
+  background: white;
+  color: #1e293b;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  max-width: 100%;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section:last-of-type {
+  margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.form-section h3 svg {
+  color: #3b82f6;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.photo-upload {
+  border: 2px dashed #d1d5db;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.photo-upload.drag-active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color 0.3s ease;
+}
+
+.upload-area:hover {
+  color: #3b82f6;
+}
+
+.upload-area svg {
+  color: #9ca3af;
+  transition: color 0.3s ease;
+}
+
+.upload-area:hover svg {
+  color: #3b82f6;
+}
+
+.upload-area h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.upload-area p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.upload-area span {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.photo-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-photo {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.remove-photo:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.payment-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.payment-option {
+  display: flex;
+  cursor: pointer;
+}
+
+.payment-option input {
+  display: none;
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  transition: all 0.3s ease;
+  width: 100%;
+  font-weight: 500;
+}
+
+.payment-option input:checked + .option-content {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.option-content svg {
+  color: #6b7280;
+  transition: color 0.3s ease;
+}
+
+.payment-option input:checked + .option-content svg {
+  color: #3b82f6;
+}
+
+.submit-message {
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.submit-message.success {
+  background: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.submit-message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.submit-btn:hover {
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.submit-btn:disabled:hover {
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  transform: none;
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) {
+  .appointment-section {
+    padding: 3rem 2rem;
+  }
+
+  .section-header h2 {
+    font-size: 2.25rem;
+  }
+
+  .section-header p {
+    font-size: 1rem;
+    max-width: 600px;
+  }
+
+  .appointment-form {
+    padding: 2rem;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-section h3 {
+    font-size: 1.25rem;
+  }
+
+  .payment-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .photo-preview {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .appointment-section {
+    padding: 4rem 2rem;
+  }
+
+  .container {
+    max-width: 800px;
+  }
+
+  .section-header h2 {
+    font-size: 2.75rem;
+  }
+
+  .section-header p {
+    font-size: 1.1rem;
+  }
+
+  .appointment-form {
+    padding: 2.5rem;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .form-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .photo-upload {
+    padding: 2rem;
+  }
+
+  .photo-preview {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+  }
+
+  .submit-btn {
+    max-width: 300px;
+    margin: 0 auto;
+    display: block;
+  }
+}
+
+/* Large Desktop Styles */
+@media (min-width: 1280px) {
+  .appointment-section {
+    padding: 5rem 2rem;
+  }
+
+  .container {
+    max-width: 900px;
+  }
+
+  .section-header h2 {
+    font-size: 3rem;
+  }
+
+  .appointment-form {
+    padding: 3rem;
+  }
+
+  .form-section {
+    margin-bottom: 2.5rem;
+  }
+}
+
+/* Animation Enhancements */
+@media (prefers-reduced-motion: no-preference) {
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    transform-origin: center;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    transform: scale(1.02);
+  }
+
+  .photo-item {
+    transition: transform 0.3s ease;
+  }
+
+  .photo-item:hover {
+    transform: scale(1.05);
+  }
+
+  .payment-option:hover .option-content {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark Mode Styles */
+.dark-mode .appointment-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.dark-mode .appointment-form {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+}
+
+.dark-mode .section-header h2 {
+  color: #f1f5f9;
+}
+
+.dark-mode .section-header p {
+  color: #cbd5e1;
+}
+
+.dark-mode .form-section h3 {
+  color: #f1f5f9;
+  border-bottom-color: #334155;
+}
+
+.dark-mode .form-group label {
+  color: #cbd5e1;
+}
+
+.dark-mode .form-group input,
+.dark-mode .form-group select,
+.dark-mode .form-group textarea {
+  background: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.dark-mode .form-group input:focus,
+.dark-mode .form-group select:focus,
+.dark-mode .form-group textarea:focus {
+  background: #475569;
+  border-color: #60a5fa;
+}
+
+.dark-mode .photo-upload {
+  background: #334155;
+  border-color: #475569;
+}
+
+.dark-mode .photo-upload.drag-active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #60a5fa;
+}
+
+.dark-mode .upload-area {
+  color: #cbd5e1;
+}
+
+.dark-mode .upload-area:hover {
+  color: #60a5fa;
+}
+
+.dark-mode .upload-area svg {
+  color: #94a3b8;
+}
+
+.dark-mode .upload-area:hover svg {
+  color: #60a5fa;
+}
+
+.dark-mode .upload-area span {
+  color: #94a3b8;
+}
+
+.dark-mode .photo-preview {
+  border-top-color: #475569;
+}
+
+.dark-mode .option-content {
+  background: #334155;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+.dark-mode .payment-option input:checked + .option-content {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.dark-mode .option-content svg {
+  color: #94a3b8;
+}
+
+.dark-mode .payment-option input:checked + .option-content svg {
+  color: #60a5fa;
+}

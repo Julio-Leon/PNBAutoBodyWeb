@@ -1,0 +1,673 @@
+/* Mobile First - Services Component */
+
+.services-section {
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.section-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.section-header p {
+  font-size: 0.9rem;
+  color: #64748b;
+  max-width: 90%;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.tab-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 0 0.5rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.tab-content {
+  min-height: 400px;
+}
+
+/* Services Grid */
+.services-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.service-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.service-card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.service-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.service-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.service-card p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.service-features {
+  margin-bottom: 1.5rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.feature svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.feature span {
+  color: #374151;
+}
+
+.service-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.detail svg {
+  color: #3b82f6;
+}
+
+/* Partners Content */
+.partners-content,
+.warranty-content,
+.about-content {
+  padding: 0 0.5rem;
+}
+
+.partners-intro,
+.warranty-intro,
+.about-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.partners-intro h3,
+.warranty-intro h3,
+.about-hero h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.partners-intro p,
+.warranty-intro p,
+.about-hero p {
+  color: #64748b;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.partner-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.partner-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.partner-card svg {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.partner-card span {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 0.85rem;
+}
+
+.benefits {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.benefits h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.benefits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.benefit svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.benefit span {
+  color: #374151;
+}
+
+/* Warranty Grid */
+.warranty-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.warranty-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.warranty-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+}
+
+.warranty-header svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.warranty-header h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.warranty-header p {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.warranty-coverage {
+  background: #fef3c7;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  color: #92400e;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.warranty-includes h5 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.warranty-includes ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.warranty-includes li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.warranty-includes li svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+/* About Content */
+.about-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat {
+  background: white;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin: 0 auto 0.75rem;
+}
+
+.stat-info h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.stat-info p {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.certifications-awards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.certifications,
+.awards {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.certifications h4,
+.awards h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.certifications ul,
+.awards ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.certifications li,
+.awards li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.certifications li svg,
+.awards li svg {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) {
+  .services-section {
+    padding: 3rem 2rem;
+  }
+
+  .section-header h2 {
+    font-size: 2.25rem;
+  }
+
+  .section-header p {
+    font-size: 1rem;
+    max-width: 600px;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    padding: 0;
+  }
+
+  .partners-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .warranty-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .about-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .certifications-awards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .service-details {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .services-section {
+    padding: 4rem 2rem;
+  }
+
+  .container {
+    max-width: 1200px;
+  }
+
+  .section-header h2 {
+    font-size: 2.75rem;
+  }
+
+  .section-header p {
+    font-size: 1.1rem;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.5rem;
+  }
+
+  .partners-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .warranty-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .tab-btn {
+    padding: 1rem 1.5rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Large Desktop Styles */
+@media (min-width: 1280px) {
+  .services-section {
+    padding: 5rem 2rem;
+  }
+
+  .section-header h2 {
+    font-size: 3rem;
+  }
+
+  .services-grid {
+    gap: 3rem;
+  }
+}
+
+/* Animation Enhancements */
+@media (prefers-reduced-motion: no-preference) {
+  .tab-btn {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tab-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+    transition: all 0.6s ease;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+  }
+
+  .tab-btn:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .service-card {
+    transform-origin: center;
+  }
+
+  .partner-card:hover {
+    animation: bounce 0.6s ease-in-out;
+  }
+
+  @keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+      animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+      transform: translateY(0);
+    }
+    40%, 43% {
+      animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+      transform: translateY(-8px);
+    }
+    70% {
+      animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+      transform: translateY(-4px);
+    }
+    90% {
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/* Dark Mode Styles */
+.dark-mode .services-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.dark-mode .section-header h2,
+.dark-mode .partners-intro h3,
+.dark-mode .warranty-intro h3,
+.dark-mode .about-hero h3 {
+  color: #f1f5f9;
+}
+
+.dark-mode .section-header p,
+.dark-mode .partners-intro p,
+.dark-mode .warranty-intro p,
+.dark-mode .about-hero p {
+  color: #cbd5e1;
+}
+
+.dark-mode .tab-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+.dark-mode .tab-btn:hover {
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.dark-mode .tab-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.dark-mode .service-card,
+.dark-mode .partner-card,
+.dark-mode .warranty-card,
+.dark-mode .benefits,
+.dark-mode .certifications,
+.dark-mode .awards {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+.dark-mode .service-card h3,
+.dark-mode .warranty-header h4,
+.dark-mode .benefits h4,
+.dark-mode .certifications h4,
+.dark-mode .awards h4 {
+  color: #f1f5f9;
+}
+
+.dark-mode .service-card p,
+.dark-mode .warranty-header p {
+  color: #cbd5e1;
+}
+
+.dark-mode .feature span,
+.dark-mode .benefit span,
+.dark-mode .certifications li,
+.dark-mode .awards li {
+  color: #cbd5e1;
+}
+
+.dark-mode .detail {
+  color: #94a3b8;
+}
+
+.dark-mode .partner-card span {
+  color: #f1f5f9;
+}
+
+.dark-mode .warranty-coverage {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+}
+
+.dark-mode .warranty-includes h5 {
+  color: #f1f5f9;
+}
+
+.dark-mode .warranty-includes li {
+  color: #cbd5e1;
+}
+
+.dark-mode .stat {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+.dark-mode .stat-info h4 {
+  color: #f1f5f9;
+}
+
+.dark-mode .stat-info p {
+  color: #94a3b8;
+}

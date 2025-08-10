@@ -1,0 +1,26 @@
+I want to make a website for a Auto Repair Body Shop 
+
+Section for catalog of before and after repairs that have been done at the shop.
+    - Before and After Pictures
+    - Company categorization
+
+Section for customers to be able to make appoinments
+    - Customer sends pictures of car for estimate/quote
+    - What kind of damage/repair is needed
+    - Select whether they are using insurance or paying out of pocket
+
+Section to display what kind of work is done at the shop, and which companies the shop works with. 
+    - Link this to the catalog of before and afters.
+    - Explain Warranty information
+    - General Information about the shop
+
+
+Website for styling inspiration
+    - https://repairpal.com/recalls
+
+
+
+Later implemantation 
+    - Section to let the customer ask a Mechanic AI questions about their cars.
+        - Customer can Chat with a Mechanic AI
+        - AI should be able to respond with detailed answers 
