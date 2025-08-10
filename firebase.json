@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "pnb-front-end/dist",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -11,24 +11,29 @@
         "source": "**",
         "destination": "/index.html"
       }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(js|css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=31536000"
-          }
-        ]
-      }
     ]
   },
-  "functions": {
-    "source": "functions",
-    "node": "18",
-    "predeploy": [
-      "npm --prefix functions install"
-    ]
+  "functions": [
+    {
+      "source": "functions",
+      "node": "18",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }
