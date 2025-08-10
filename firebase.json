@@ -14,7 +14,7 @@
     ]
   },
   "functions": {
-    "source": "functions-new",
+    "source": "functions-clean",
     "node": "18"
   },
   "firestore": {

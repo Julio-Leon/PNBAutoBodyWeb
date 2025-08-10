@@ -1,5 +1,6 @@
 // API Configuration
-const isDevelopment = import.meta.env.DEV;
+// Force production mode for now to ensure Firebase Functions URL is used
+const isDevelopment = false; // Temporarily forced to false
 
 const API_CONFIG = {
   // Development API (local server)
@@ -8,13 +9,22 @@ const API_CONFIG = {
   },
   // Production API (Firebase Functions)
   production: {
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'https://us-central1-pnbautobody-33725.cloudfunctions.net/api/api'
+    baseURL: 'https://us-central1-pnbautobody-33725.cloudfunctions.net/api'
   }
 };
 
 export const API_BASE_URL = isDevelopment 
   ? API_CONFIG.development.baseURL 
   : API_CONFIG.production.baseURL;
+
+// Debug logging for production
+console.log('API Config Debug:', {
+  isDevelopment,
+  hostname: window.location.hostname,
+  API_BASE_URL,
+  env_DEV: import.meta.env.DEV,
+  env_MODE: import.meta.env.MODE
+});
 
 // Export individual endpoints for easy access
 export const API_ENDPOINTS = {
