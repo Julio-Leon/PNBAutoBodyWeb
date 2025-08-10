@@ -3,12 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const admin = require('firebase-admin');
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
+// Initialize Firebase through our config module
+const { initializeFirebase } = require('./src/config/firebase');
+initializeFirebase();
 
 // Import routes
 const appointmentRoutes = require('./src/routes/appointmentRoutes');

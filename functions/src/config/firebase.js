@@ -1,10 +1,6 @@
 const admin = require('firebase-admin');
 const { getStorage } = require('firebase-admin/storage');
 const { getFirestore } = require('firebase-admin/firestore');
-
-const admin = require('firebase-admin');
-const { getStorage } = require('firebase-admin/storage');
-const { getFirestore } = require('firebase-admin/firestore');
 const path = require('path');
 
 /**
