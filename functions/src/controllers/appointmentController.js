@@ -146,6 +146,8 @@ const getAppointment = asyncHandler(async (req, res) => {
  */
 const createAppointment = asyncHandler(async (req, res) => {
   try {
+    console.log('Received appointment data:', req.body);
+    
     const {
       name,
       email,
@@ -170,7 +172,8 @@ const createAppointment = asyncHandler(async (req, res) => {
       customerName: name, // Store as customerName in database for admin display
       email,
       phone,
-      serviceType: damageType, // Store as serviceType in database
+      vehicleInfo: vehicleInfo || 'N/A', // Default if not provided
+      serviceType: damageType, // Store as serviceType in database - this maps damageType from frontend
       description: description || null,
       preferredDate: preferredDate ? new Date(preferredDate) : null,
       preferredTime: preferredTime || null,
@@ -183,6 +186,8 @@ const createAppointment = asyncHandler(async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+
+    console.log('Processed appointment data:', appointmentData);
 
     // Filter out undefined values to avoid Firestore errors
     const cleanedAppointmentData = Object.fromEntries(

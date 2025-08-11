@@ -215,27 +215,15 @@ const Management = () => {
     if (!dateValue) return 'N/A';
     
     let date;
-    
-    // Handle Firestore Timestamp objects
-    if (dateValue && typeof dateValue === 'object' && dateValue.toDate) {
-      date = dateValue.toDate();
-    }
-    // Handle JavaScript Date objects
-    else if (dateValue instanceof Date) {
+    if (dateValue instanceof Date) {
       date = dateValue;
-    }
-    // Handle date strings
-    else if (typeof dateValue === 'string') {
+    } else if (typeof dateValue === 'string') {
       date = new Date(dateValue);
-    }
-    else {
+    } else {
       return 'N/A';
     }
     
-    // Check if date is valid
-    if (!date || isNaN(date.getTime())) {
-      return 'N/A';
-    }
+    if (isNaN(date.getTime())) return 'N/A';
     
     return date.toLocaleDateString('en-US', {
       year: 'numeric',

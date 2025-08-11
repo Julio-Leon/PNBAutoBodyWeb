@@ -1,45 +1,75 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config/api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(false); // Prevent concurrent auth checks
 
   useEffect(() => {
-    checkAuthStatus();
+    // Delay initial auth check slightly to ensure API is ready
+    const timer = setTimeout(() => {
+      checkAuthStatus();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const checkAuthStatus = async () => {
+    // Prevent multiple simultaneous auth checks
+    if (isChecking) {
+      return;
+    }
+
+    setIsChecking(true);
     try {
       const token = localStorage.getItem('adminToken');
       if (token) {
-        const response = await fetch('http://localhost:5000/api/admin/verify', {
+        // Increase timeout and add better error handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch(`${API_BASE_URL}/admin/verify`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
-          console.log('Auth verify response:', data); // Debug log
-          setUser(data.data); // API returns user data in 'data' field
+          setUser(data.data.user);
         } else {
           localStorage.removeItem('adminToken');
+          setUser(null);
         }
+      } else {
+        setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('adminToken');
+      if (error.name === 'AbortError') {
+        // Don't clear token on timeout - it might just be a network hiccup during fast refresh
+      } else {
+        // Only clear auth on actual auth failures, not network issues
+        if (error.message && error.message.includes('401')) {
+          localStorage.removeItem('adminToken');
+          setUser(null);
+        }
+      }
     } finally {
       setLoading(false);
+      setIsChecking(false);
     }
   };
 
   const login = async (username, password) => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/login', {
+      const response = await fetch(`${API_BASE_URL}/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -49,9 +79,8 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Admin login response:', data); // Debug log
-        localStorage.setItem('adminToken', data.token);
-        setUser(data.data); // API returns user data in 'data' field
+        localStorage.setItem('adminToken', data.data.token);
+        setUser(data.data.user);
         return { success: true };
       } else {
         const errorData = await response.json();
@@ -67,10 +96,19 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const forceReset = () => {
+    // Clear all potential auth-related data
+    localStorage.removeItem('adminToken');
+    sessionStorage.clear();
+    setUser(null);
+    setLoading(false);
+  };
+
   const value = {
     user,
     login,
     logout,
+    forceReset,
     loading
   };
 

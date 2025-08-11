@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Calendar, CreditCard, Shield, Phone, Mail, User, Camera, FileText } from 'lucide-react';
 import './Appointment.css';
+import { API_BASE_URL } from '../../config/api';
 
 const Appointment = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
+    vehicleInfo: '',
     damageType: '',
     description: '',
     paymentMethod: 'insurance',
     insuranceCompany: '',
     preferredDate: '',
+    preferredTime: '',
     photos: []
   });
 
@@ -84,31 +87,30 @@ const Appointment = () => {
     setSubmitMessage('');
 
     try {
-      // Create FormData for multipart/form-data submission (for file uploads)
-      const formDataToSubmit = new FormData();
-      
-      // Add form fields to FormData
-      formDataToSubmit.append('name', formData.name);
-      formDataToSubmit.append('email', formData.email);
-      formDataToSubmit.append('phone', formData.phone);
-      formDataToSubmit.append('damageType', formData.damageType);
-      formDataToSubmit.append('description', formData.description);
-      formDataToSubmit.append('paymentMethod', formData.paymentMethod);
-      formDataToSubmit.append('preferredDate', formData.preferredDate);
-      
-      if (formData.paymentMethod === 'insurance' && formData.insuranceCompany) {
-        formDataToSubmit.append('insuranceCompany', formData.insuranceCompany);
-      }
-      
-      // Add photos if any
-      formData.photos.forEach((photo, index) => {
-        formDataToSubmit.append('images', photo);
-      });
+      // Create JSON payload instead of FormData for better backend compatibility
+      const appointmentData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        vehicleInfo: formData.vehicleInfo,
+        damageType: formData.damageType,
+        description: formData.description,
+        paymentMethod: formData.paymentMethod,
+        preferredDate: formData.preferredDate,
+        preferredTime: formData.preferredTime,
+        insuranceCompany: formData.paymentMethod === 'insurance' ? formData.insuranceCompany : null,
+        isUrgent: false
+      };
+
+      console.log('Sending appointment data:', appointmentData);
 
       // Submit to backend
-      const response = await fetch('http://localhost:5000/api/appointments', {
+      const response = await fetch(`${API_BASE_URL}/appointments`, {
         method: 'POST',
-        body: formDataToSubmit,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointmentData),
       });
 
       const result = await response.json();
@@ -120,11 +122,13 @@ const Appointment = () => {
           name: '',
           email: '',
           phone: '',
+          vehicleInfo: '',
           damageType: '',
           description: '',
           paymentMethod: 'insurance',
           insuranceCompany: '',
           preferredDate: '',
+          preferredTime: '',
           photos: []
         });
       } else {
@@ -204,6 +208,17 @@ const Appointment = () => {
                   required
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="vehicleInfo">Vehicle Information</label>
+                <input
+                  type="text"
+                  id="vehicleInfo"
+                  name="vehicleInfo"
+                  value={formData.vehicleInfo}
+                  onChange={handleInputChange}
+                  placeholder="Year, Make, Model (e.g., 2020 Honda Civic)"
+                />
+              </div>
             </div>
           </div>
 
@@ -240,7 +255,8 @@ const Appointment = () => {
             </div>
           </div>
 
-          {/* Photo Upload */}
+          {/* Photo Upload - Temporarily disabled while using JSON submission */}
+          {false && (
           <div className="form-section">
             <h3><Camera size={20} /> Upload Photos</h3>
             <div 
@@ -286,6 +302,7 @@ const Appointment = () => {
               )}
             </div>
           </div>
+          )}
 
           {/* Payment Method */}
           <div className="form-section">
@@ -337,18 +354,44 @@ const Appointment = () => {
             )}
           </div>
 
-          {/* Preferred Date */}
+          {/* Preferred Date & Time */}
           <div className="form-section">
-            <h3><Calendar size={20} /> Preferred Appointment Date</h3>
-            <div className="form-group">
-              <input
-                type="date"
-                id="preferredDate"
-                name="preferredDate"
-                value={formData.preferredDate}
-                onChange={handleInputChange}
-                min={new Date().toISOString().split('T')[0]}
-              />
+            <h3><Calendar size={20} /> Preferred Appointment Date & Time</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="preferredDate">Preferred Date *</label>
+                <input
+                  type="date"
+                  id="preferredDate"
+                  name="preferredDate"
+                  value={formData.preferredDate}
+                  onChange={handleInputChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="preferredTime">Preferred Time *</label>
+                <select
+                  id="preferredTime"
+                  name="preferredTime"
+                  value={formData.preferredTime}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select time</option>
+                  <option value="8:00 AM">8:00 AM</option>
+                  <option value="9:00 AM">9:00 AM</option>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="11:00 AM">11:00 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="1:00 PM">1:00 PM</option>
+                  <option value="2:00 PM">2:00 PM</option>
+                  <option value="3:00 PM">3:00 PM</option>
+                  <option value="4:00 PM">4:00 PM</option>
+                  <option value="5:00 PM">5:00 PM</option>
+                </select>
+              </div>
             </div>
           </div>
 

@@ -18,9 +18,7 @@ const Header = ({ currentView, setCurrentView }) => {
 
   const { user, logout } = useContext(AuthContext);
 
-  // Debug log to see user state
   useEffect(() => {
-    console.log('Header: User state changed:', user);
     // If user just logged in and we're on admin page, redirect to management
     if (user && user.role === 'admin' && currentView === 'admin') {
       setTimeout(() => {
@@ -204,12 +202,6 @@ const Header = ({ currentView, setCurrentView }) => {
             >
               <h1>PNJ Auto Body</h1>
               <span>Professional Collision Repair</span>
-              {/* Temporary debug info */}
-              {process.env.NODE_ENV === 'development' && (
-                <small style={{ color: 'red', display: 'block', fontSize: '10px' }}>
-                  User: {user ? `${user.username} (${user.role})` : 'Not logged in'}
-                </small>
-              )}
             </motion.div>
 
             {/* Desktop Navigation */}
@@ -241,6 +233,20 @@ const Header = ({ currentView, setCurrentView }) => {
                   whileHover={{ y: -2, scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   title="Admin Login"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.5rem',
+                    background: 'transparent',
+                    border: '2px solid #3b82f6',
+                    borderRadius: '0.5rem',
+                    color: '#3b82f6',
+                    cursor: 'pointer',
+                    minWidth: '2.5rem',
+                    height: '2.5rem',
+                    marginLeft: '0.5rem'
+                  }}
                 >
                   <Shield size={18} />
                 </motion.button>

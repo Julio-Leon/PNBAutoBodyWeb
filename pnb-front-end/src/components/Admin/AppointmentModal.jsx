@@ -14,16 +14,50 @@ import {
 } from 'lucide-react';
 
 const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
+  // Helper function to format date for input
+  const formatDateForInput = (date) => {
+    if (!date) return '';
+    
+    let jsDate;
+    
+    // Handle Firestore Timestamp objects
+    if (date && typeof date === 'object' && date.toDate) {
+      jsDate = date.toDate();
+    }
+    // Handle JavaScript Date objects
+    else if (date instanceof Date) {
+      jsDate = date;
+    }
+    // Handle date strings
+    else if (typeof date === 'string') {
+      jsDate = new Date(date);
+    }
+    else {
+      return '';
+    }
+    
+    // Check if date is valid
+    if (!jsDate || isNaN(jsDate.getTime())) return '';
+    
+    // Format date using local timezone to avoid offset issues
+    // Use getFullYear, getMonth, getDate to get local date components
+    const year = jsDate.getFullYear();
+    const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+    const day = String(jsDate.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  };
+
   const [editData, setEditData] = useState({
     customerName: appointment.customerName || '',
     email: appointment.email || '',
     phone: appointment.phone || '',
     serviceType: appointment.serviceType || '',
     vehicleInfo: appointment.vehicleInfo || '',
-    preferredDate: appointment.preferredDate || '',
+    preferredDate: formatDateForInput(appointment.preferredDate),
     preferredTime: appointment.preferredTime || '',
     status: appointment.status || 'pending',
-    message: appointment.message || ''
+    message: appointment.description || appointment.message || '' // Check both fields
   });
   const [loading, setLoading] = useState(false);
 
@@ -269,7 +303,7 @@ const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
                   />
                 ) : (
                   <div className="form-display message-display">
-                    {appointment.message || 'No additional message provided.'}
+                    {appointment.description || appointment.message || 'No additional message provided.'}
                   </div>
                 )}
               </div>

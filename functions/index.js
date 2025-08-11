@@ -1,106 +1,108 @@
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
-const admin = require('firebase-admin');
 
-// Initialize Firebase Admin SDK with default credentials
+// Initialize Firebase Admin SDK
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    storageBucket: 'pnbautobody-33725.appspot.com'
-  });
+  admin.initializeApp();
 }
 
-// Create Express app
 const app = express();
 
-// CORS configuration
-const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://pnbautobody-33725.web.app',
-    'https://pnbautobody-33725.firebaseapp.com'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
-};
+// Middleware
+app.use(cors({ origin: true }));
+app.use(express.json());
 
-app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Simple health check
+// Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'PNJ Auto Body API is running on Firebase Functions',
+  res.json({ 
+    status: 'OK', 
+    message: 'PNJ Auto Body API is running',
     timestamp: new Date().toISOString()
   });
 });
 
-// Basic appointments endpoint for testing
-app.get('/api/appointments', async (req, res) => {
+// Get appointments
+app.get('/appointments', async (req, res) => {
   try {
     const db = admin.firestore();
     const snapshot = await db.collection('appointments').orderBy('createdAt', 'desc').get();
     
     const appointments = [];
     snapshot.forEach(doc => {
+      const data = doc.data();
       appointments.push({
         id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        updatedAt: doc.data().updatedAt?.toDate()
+        ...data,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+        preferredDate: data.preferredDate?.toDate() // Convert Firestore timestamp to JS Date
       });
     });
 
-    res.status(200).json({
-      success: true,
-      data: appointments
-    });
+    res.json({ success: true, data: appointments });
   } catch (error) {
-    console.error('Error fetching appointments:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch appointments'
-    });
+    console.error('Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch appointments' });
   }
 });
 
-// Basic appointment creation endpoint
-app.post('/api/appointments', async (req, res) => {
+// Create appointment
+app.post('/appointments', async (req, res) => {
   try {
+    console.log('Received appointment data:', req.body);
+    
     const db = admin.firestore();
     const appointmentData = {
-      ...req.body,
+      customerName: req.body.name || 'N/A',
+      email: req.body.email || 'N/A',
+      phone: req.body.phone || 'N/A',
+      vehicleInfo: req.body.vehicleInfo || 'N/A',
+      serviceType: req.body.damageType || 'N/A',
+      description: req.body.description || null,
+      preferredDate: null,
+      preferredTime: req.body.preferredTime || null,
+      paymentMethod: req.body.paymentMethod || 'N/A',
+      insuranceCompany: req.body.insuranceCompany || null,
+      isUrgent: req.body.isUrgent || false,
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
+    // Handle date conversion carefully
+    if (req.body.preferredDate) {
+      try {
+        const parsedDate = new Date(req.body.preferredDate);
+        if (!isNaN(parsedDate.getTime())) {
+          appointmentData.preferredDate = parsedDate;
+          console.log('Valid date created:', parsedDate);
+        } else {
+          console.log('Invalid date provided:', req.body.preferredDate);
+        }
+      } catch (error) {
+        console.error('Date parsing error:', error);
+      }
+    }
+
+    console.log('Processed appointment data:', appointmentData);
+
     const docRef = await db.collection('appointments').add(appointmentData);
 
     res.status(201).json({
       success: true,
-      data: {
-        id: docRef.id,
-        ...appointmentData
-      },
+      data: { id: docRef.id, ...appointmentData },
       message: 'Appointment created successfully'
     });
   } catch (error) {
-    console.error('Error creating appointment:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create appointment'
-    });
+    console.error('Create appointment error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create appointment' });
   }
 });
 
-// Status update endpoint
-app.patch('/api/appointments/:id/status', async (req, res) => {
+// Update appointment status
+app.patch('/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -111,64 +113,145 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
       updatedAt: new Date()
     });
 
-    res.status(200).json({
-      success: true,
-      message: 'Appointment status updated successfully'
-    });
+    res.json({ success: true, message: 'Status updated successfully' });
   } catch (error) {
-    console.error('Error updating appointment status:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update appointment status'
-    });
+    console.error('Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update status' });
   }
 });
 
-// Admin login endpoint (simplified)
-app.post('/api/admin/login', (req, res) => {
+// Update full appointment
+app.put('/appointments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = admin.firestore();
+
+    console.log('PUT request received for appointment:', id);
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+
+    // Check if appointment exists
+    const doc = await db.collection('appointments').doc(id).get();
+    if (!doc.exists) {
+      console.log('Appointment not found:', id);
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    // Prepare update data with careful date handling
+    const updateData = {
+      customerName: req.body.customerName || 'N/A',
+      email: req.body.email || 'N/A',
+      phone: req.body.phone || 'N/A',
+      vehicleInfo: req.body.vehicleInfo || 'N/A',
+      serviceType: req.body.serviceType || 'N/A',
+      preferredTime: req.body.preferredTime || null,
+      status: req.body.status || 'pending',
+      description: req.body.message || null, // Map message to description field
+      updatedAt: new Date()
+    };
+
+    // Handle date conversion carefully
+    if (req.body.preferredDate) {
+      try {
+        const dateStr = req.body.preferredDate;
+        console.log('Processing date:', dateStr);
+        
+        // If it's already a valid date string, create Date object
+        const parsedDate = new Date(dateStr);
+        if (!isNaN(parsedDate.getTime())) {
+          updateData.preferredDate = parsedDate;
+          console.log('Converted date:', parsedDate);
+        } else {
+          console.log('Invalid date format, setting to null');
+          updateData.preferredDate = null;
+        }
+      } catch (dateError) {
+        console.error('Date conversion error:', dateError);
+        updateData.preferredDate = null;
+      }
+    } else {
+      updateData.preferredDate = null;
+    }
+
+    console.log('Final update data:', JSON.stringify(updateData, null, 2));
+
+    // Update the appointment
+    await db.collection('appointments').doc(id).update(updateData);
+
+    // Get the updated document
+    const updatedDoc = await db.collection('appointments').doc(id).get();
+    const updatedData = updatedDoc.data();
+
+    console.log('Update successful');
+
+    res.json({ 
+      success: true, 
+      data: {
+        id: updatedDoc.id,
+        ...updatedData,
+        createdAt: updatedData.createdAt?.toDate(),
+        updatedAt: updatedData.updatedAt?.toDate()
+      },
+      message: 'Appointment updated successfully' 
+    });
+  } catch (error) {
+    console.error('Update appointment error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ success: false, error: 'Failed to update appointment', details: error.message });
+  }
+});
+
+// Delete appointment
+app.delete('/appointments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = admin.firestore();
+
+    // Check if appointment exists
+    const doc = await db.collection('appointments').doc(id).get();
+    if (!doc.exists) {
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    // Delete the appointment
+    await db.collection('appointments').doc(id).delete();
+
+    res.json({ success: true, message: 'Appointment deleted successfully' });
+  } catch (error) {
+    console.error('Delete appointment error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete appointment' });
+  }
+});
+
+// Admin login
+app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
   
-  // Simple hardcoded authentication for now
   if (username === 'PNBAdmin' && password === 'v83hbv9s73b') {
-    res.status(200).json({
+    res.json({
       success: true,
       data: {
         user: { username: 'PNBAdmin', role: 'admin' },
-        token: 'firebase-functions-token'
+        token: 'admin-token-123'
       }
     });
   } else {
-    res.status(401).json({
-      success: false,
-      error: 'Invalid credentials'
-    });
+    res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
 });
 
-// Admin verification endpoint
-app.get('/api/admin/verify', (req, res) => {
+// Admin verify
+app.get('/admin/verify', (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   
-  if (token === 'firebase-functions-token') {
-    res.status(200).json({
+  if (token === 'admin-token-123') {
+    res.json({
       success: true,
       data: { user: { username: 'PNBAdmin', role: 'admin' } }
     });
   } else {
-    res.status(401).json({
-      success: false,
-      error: 'Invalid token'
-    });
+    res.status(401).json({ success: false, error: 'Invalid token' });
   }
 });
 
-// Catch all handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint not found'
-  });
-});
-
-// Export the Express app as a Firebase Function
+// Export the function
 exports.api = functions.https.onRequest(app);
