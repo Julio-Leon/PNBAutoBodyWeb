@@ -11,16 +11,24 @@ import {
   FileText,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
+import CustomerAppointmentModal from './CustomerAppointmentModal';
+import CustomerDeleteConfirmModal from './CustomerDeleteConfirmModal';
 import './CustomerDashboard.css';
 
 const CustomerDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { user } = useContext(AuthContext);
 
@@ -65,6 +73,89 @@ const CustomerDashboard = () => {
       setError('Network error. Please check your connection.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditAppointment = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteAppointment = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDeleteModal(true);
+  };
+
+  const handleSaveAppointment = async (appointmentId, formData) => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        return { success: false, error: 'Please log in to edit appointments' };
+      }
+
+      const response = await fetch(`${API_BASE_URL}/appointments/${appointmentId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update the appointment in the list
+        setAppointments(prev => 
+          prev.map(apt => 
+            apt.id === appointmentId 
+              ? { ...apt, ...data.data }
+              : apt
+          )
+        );
+        
+        return { success: true };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error || 'Failed to update appointment' };
+      }
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      return { success: false, error: 'Network error occurred' };
+    }
+  };
+
+  const handleConfirmDelete = async (appointmentId) => {
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        setError('Please log in to delete appointments');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/appointments/${appointmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Remove the appointment from the list
+        setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+        setShowDeleteModal(false);
+        setSelectedAppointment(null);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to delete appointment');
+      }
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      setError('Network error occurred');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -269,6 +360,25 @@ const CustomerDashboard = () => {
                     </div>
                   </div>
 
+                  <div className="appointment-actions">
+                    <button
+                      className="action-btn edit"
+                      onClick={() => handleEditAppointment(appointment)}
+                      title="Edit Appointment"
+                      disabled={appointment.status === 'completed' || appointment.status === 'cancelled'}
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      className="action-btn delete"
+                      onClick={() => handleDeleteAppointment(appointment)}
+                      title="Delete Appointment"
+                      disabled={appointment.status === 'completed'}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+
                   {appointment.createdAt && (
                     <div className="appointment-footer">
                       <small>Requested on: {formatDate(appointment.createdAt)}</small>
@@ -280,6 +390,29 @@ const CustomerDashboard = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      <CustomerAppointmentModal
+        appointment={selectedAppointment}
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedAppointment(null);
+        }}
+        onSave={handleSaveAppointment}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <CustomerDeleteConfirmModal
+        appointment={selectedAppointment}
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedAppointment(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };

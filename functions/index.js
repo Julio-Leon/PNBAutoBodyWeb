@@ -248,9 +248,29 @@ app.put('/appointments/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const db = admin.firestore();
+    
+    // Check authentication
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    let currentUser = null;
+    let isAdmin = false;
+    let userId = null;
+    
+    if (token) {
+      if (token === 'admin-token-123') {
+        isAdmin = true;
+        currentUser = { role: 'admin' };
+      } else if (token.startsWith('user-')) {
+        const tokenParts = token.split('-');
+        if (tokenParts.length >= 2) {
+          userId = tokenParts[1];
+          currentUser = { role: 'customer', id: userId };
+        }
+      }
+    }
 
     console.log('PUT request received for appointment:', id);
     console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Current user:', currentUser);
 
     // Check if appointment exists
     const doc = await db.collection('appointments').doc(id).get();
@@ -259,50 +279,65 @@ app.put('/appointments/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
     }
 
+    const appointmentData = doc.data();
+    
+    // Authorization check - customers can only edit their own appointments
+    if (!isAdmin && (!currentUser || currentUser.role !== 'customer' || appointmentData.userId !== userId)) {
+      return res.status(403).json({ success: false, error: 'You can only edit your own appointments' });
+    }
+
     // Prepare update data with careful date handling
     const updateData = {
-      customerName: req.body.customerName || 'N/A',
-      email: req.body.email || 'N/A',
-      phone: req.body.phone || 'N/A',
-      vehicleInfo: req.body.vehicleInfo || 'N/A',
-      serviceType: req.body.serviceType || req.body.damageType || 'N/A', // Handle both serviceType and damageType
-      preferredTime: req.body.preferredTime || null,
-      status: req.body.status || 'pending',
-      description: req.body.message || req.body.description || null, // Map both message and description fields
+      customerName: req.body.customerName || req.body.name || appointmentData.customerName || 'N/A',
+      email: req.body.email || appointmentData.email || 'N/A',
+      phone: req.body.phone || appointmentData.phone || 'N/A',
+      vehicleInfo: req.body.vehicleInfo || appointmentData.vehicleInfo || 'N/A',
+      serviceType: req.body.serviceType || req.body.damageType || appointmentData.serviceType || 'N/A',
+      preferredTime: req.body.preferredTime || appointmentData.preferredTime || null,
+      description: req.body.message || req.body.description || appointmentData.description || null,
+      paymentMethod: req.body.paymentMethod || appointmentData.paymentMethod || 'N/A',
+      insuranceCompany: req.body.insuranceCompany || appointmentData.insuranceCompany || null,
       updatedAt: new Date()
     };
+    
+    // Only admins can change status
+    if (isAdmin && req.body.status) {
+      updateData.status = req.body.status;
+    }
 
     // Handle date conversion carefully - avoid timezone issues
-    if (req.body.preferredDate) {
-      try {
-        const dateStr = req.body.preferredDate;
-        console.log('Processing date:', dateStr);
-        
-        if (dateStr.includes('T')) {
-          // Already has time info, parse as is
-          const parsedDate = new Date(dateStr);
-          if (!isNaN(parsedDate.getTime())) {
-            updateData.preferredDate = parsedDate;
-            console.log('Valid datetime updated:', parsedDate);
-          }
-        } else {
-          // Date only (YYYY-MM-DD), create at local noon to avoid timezone issues
-          const [year, month, day] = dateStr.split('-').map(Number);
-          const parsedDate = new Date(year, month - 1, day, 12, 0, 0); // Month is 0-indexed, set time to noon
-          if (!isNaN(parsedDate.getTime())) {
-            updateData.preferredDate = parsedDate;
-            console.log('Valid local date updated:', parsedDate);
+    if (req.body.preferredDate !== undefined) {
+      if (req.body.preferredDate) {
+        try {
+          const dateStr = req.body.preferredDate;
+          console.log('Processing date:', dateStr);
+          
+          if (dateStr.includes('T')) {
+            // Already has time info, parse as is
+            const parsedDate = new Date(dateStr);
+            if (!isNaN(parsedDate.getTime())) {
+              updateData.preferredDate = parsedDate;
+              console.log('Valid datetime updated:', parsedDate);
+            }
           } else {
-            console.log('Invalid date format, setting to null');
-            updateData.preferredDate = null;
+            // Date only (YYYY-MM-DD), create at local noon to avoid timezone issues
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const parsedDate = new Date(year, month - 1, day, 12, 0, 0); // Month is 0-indexed, set time to noon
+            if (!isNaN(parsedDate.getTime())) {
+              updateData.preferredDate = parsedDate;
+              console.log('Valid local date updated:', parsedDate);
+            } else {
+              console.log('Invalid date format, setting to null');
+              updateData.preferredDate = null;
+            }
           }
+        } catch (dateError) {
+          console.error('Date conversion error:', dateError);
+          updateData.preferredDate = null;
         }
-      } catch (dateError) {
-        console.error('Date conversion error:', dateError);
+      } else {
         updateData.preferredDate = null;
       }
-    } else {
-      updateData.preferredDate = null;
     }
 
     console.log('Final update data:', JSON.stringify(updateData, null, 2));
@@ -352,11 +387,40 @@ app.delete('/appointments/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const db = admin.firestore();
+    
+    // Check authentication
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    let currentUser = null;
+    let isAdmin = false;
+    let userId = null;
+    
+    if (token) {
+      if (token === 'admin-token-123') {
+        isAdmin = true;
+        currentUser = { role: 'admin' };
+      } else if (token.startsWith('user-')) {
+        const tokenParts = token.split('-');
+        if (tokenParts.length >= 2) {
+          userId = tokenParts[1];
+          currentUser = { role: 'customer', id: userId };
+        }
+      }
+    }
+
+    console.log('DELETE request received for appointment:', id);
+    console.log('Current user:', currentUser);
 
     // Check if appointment exists
     const doc = await db.collection('appointments').doc(id).get();
     if (!doc.exists) {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+
+    const appointmentData = doc.data();
+    
+    // Authorization check - customers can only delete their own appointments
+    if (!isAdmin && (!currentUser || currentUser.role !== 'customer' || appointmentData.userId !== userId)) {
+      return res.status(403).json({ success: false, error: 'You can only delete your own appointments' });
     }
 
     // Delete the appointment
