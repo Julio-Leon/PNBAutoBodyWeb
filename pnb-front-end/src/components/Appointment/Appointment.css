@@ -583,24 +583,25 @@
 /* Service Selection Styles */
 .service-options {
   display: grid;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 16px;
+  margin-top: 12px;
 }
 
 .service-option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 16px;
+  padding: 16px 20px;
   background: rgba(30, 41, 59, 0.5);
   border: 2px solid rgba(71, 85, 105, 0.5);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: #e2e8f0;
   backdrop-filter: blur(10px);
+  min-height: 56px;
 }
 
 .service-option:hover {
@@ -631,8 +632,8 @@
 
 .service-option .checkmark {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   background: rgba(15, 23, 42, 0.8);
   border: 2px solid rgba(71, 85, 105, 0.8);
   border-radius: 4px;
@@ -643,23 +644,6 @@
 .service-option input:checked ~ .checkmark {
   background: #3b82f6;
   border-color: #3b82f6;
-}
-
-.service-option .checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-  left: 6px;
-  top: 2px;
-  width: 6px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.service-option input:checked ~ .checkmark:after {
-  display: block;
 }
 
 .service-hint {
@@ -673,11 +657,13 @@
 @media (min-width: 768px) {
   .service-options {
     grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
   }
 }
 
 @media (min-width: 1024px) {
   .service-options {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 }
