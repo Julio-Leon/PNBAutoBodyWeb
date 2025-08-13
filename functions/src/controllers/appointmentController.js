@@ -153,6 +153,7 @@ const createAppointment = asyncHandler(async (req, res) => {
       email,
       phone,
       vehicleInfo,
+      vehicleId, // New field for selected vehicle
       damageType,
       description,
       preferredDate,
@@ -173,6 +174,7 @@ const createAppointment = asyncHandler(async (req, res) => {
       email,
       phone,
       vehicleInfo: vehicleInfo || 'N/A', // Default if not provided
+      vehicleId: vehicleId || null, // Store reference to selected vehicle
       serviceType: damageType, // Store as serviceType in database - this maps damageType from frontend
       description: description || null,
       preferredDate: preferredDate ? new Date(preferredDate) : null,

@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Calendar, CreditCard, Shield, Phone, Mail, User, Camera, FileText } from 'lucide-react';
+import { Upload, Calendar, CreditCard, Shield, Phone, Mail, User, Camera, FileText, Car } from 'lucide-react';
 import './Appointment.css';
 import { API_BASE_URL } from '../../config/api';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -13,6 +13,7 @@ const Appointment = () => {
     email: '',
     phone: '',
     vehicleInfo: '',
+    vehicleId: '', // New field for selected vehicle ID
     damageType: '',
     description: '',
     paymentMethod: 'insurance',
@@ -25,6 +26,8 @@ const Appointment = () => {
   const [dragActive, setDragActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [userVehicles, setUserVehicles] = useState([]);
+  const [vehiclesLoading, setVehiclesLoading] = useState(false);
 
   // Auto-fill user information when user is logged in
   useEffect(() => {
@@ -35,8 +38,42 @@ const Appointment = () => {
         email: user.email || '',
         phone: user.phone || ''
       }));
+      // Fetch user vehicles for logged-in customers
+      fetchUserVehicles();
     }
   }, [user]);
+
+  const fetchUserVehicles = async () => {
+    if (!user || user.role !== 'customer') {
+      return;
+    }
+    
+    setVehiclesLoading(true);
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/vehicles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserVehicles(data.data || []);
+      } else {
+        console.error('Failed to fetch vehicles, status:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+    } finally {
+      setVehiclesLoading(false);
+    }
+  };
 
   const damageTypes = [
     'Collision Damage',
@@ -62,6 +99,30 @@ const Appointment = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // If vehicle is selected from dropdown, update both vehicleId and vehicleInfo
+    if (name === 'vehicleId' && value) {
+      const selectedVehicle = userVehicles.find(vehicle => vehicle.id === value);
+      if (selectedVehicle) {
+        setFormData(prev => ({
+          ...prev,
+          vehicleId: value,
+          vehicleInfo: `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`
+        }));
+        return;
+      }
+    }
+    
+    // If vehicleId is cleared (empty option selected), clear vehicleInfo too
+    if (name === 'vehicleId' && !value) {
+      setFormData(prev => ({
+        ...prev,
+        vehicleId: '',
+        vehicleInfo: ''
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -102,12 +163,28 @@ const Appointment = () => {
     setSubmitMessage('');
 
     try {
+      // Validate that logged-in customers must select a vehicle
+      if (user && user.role === 'customer') {
+        if (!formData.vehicleId || !formData.vehicleInfo) {
+          setSubmitMessage('Please select a vehicle from your garage before submitting.');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (userVehicles.length === 0) {
+          setSubmitMessage('You must add vehicles to your account before booking an appointment. Please go to your Dashboard → Vehicles tab to add a vehicle first.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       // Create JSON payload instead of FormData for better backend compatibility
       const appointmentData = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         vehicleInfo: formData.vehicleInfo,
+        vehicleId: formData.vehicleId || null, // Include selected vehicle ID
         damageType: formData.damageType,
         description: formData.description,
         paymentMethod: formData.paymentMethod,
@@ -146,6 +223,7 @@ const Appointment = () => {
           email: '',
           phone: '',
           vehicleInfo: '',
+          vehicleId: '', // Reset selected vehicle
           damageType: '',
           description: '',
           paymentMethod: 'insurance',
@@ -241,15 +319,72 @@ const Appointment = () => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="vehicleInfo">Vehicle Information</label>
-                <input
-                  type="text"
-                  id="vehicleInfo"
-                  name="vehicleInfo"
-                  value={formData.vehicleInfo}
-                  onChange={handleInputChange}
-                  placeholder="Year, Make, Model (e.g., 2020 Honda Civic)"
-                />
+                <label htmlFor="vehicleInfo">Vehicle Information *</label>
+                {user && user.role === 'customer' ? (
+                  <div>
+                    {vehiclesLoading ? (
+                      <div style={{ 
+                        color: '#666', 
+                        fontSize: '14px', 
+                        marginBottom: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Car size={14} />
+                        Loading your vehicles...
+                      </div>
+                    ) : userVehicles.length === 0 ? (
+                      <div style={{ 
+                        color: '#dc3545', 
+                        fontSize: '14px', 
+                        marginBottom: '8px',
+                        padding: '12px',
+                        backgroundColor: '#f8d7da',
+                        borderRadius: '6px',
+                        border: '1px solid #dc3545',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Car size={14} />
+                        <strong>You must add vehicles to your account first!</strong> Go to your Dashboard → Vehicles tab → Add Vehicle to continue.
+                      </div>
+                    ) : null}
+                    
+                    {userVehicles.length > 0 ? (
+                      <select
+                        id="vehicleId"
+                        name="vehicleId"
+                        value={formData.vehicleId}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Select a vehicle from your garage *</option>
+                        {userVehicles.map((vehicle) => (
+                          <option key={vehicle.id} value={vehicle.id}>
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                            {vehicle.licensePlate ? ` (${vehicle.licensePlate})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select disabled>
+                        <option>No vehicles available - Add vehicles first</option>
+                      </select>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    id="vehicleInfo"
+                    name="vehicleInfo"
+                    value={formData.vehicleInfo}
+                    onChange={handleInputChange}
+                    placeholder="Year, Make, Model (e.g., 2020 Honda Civic)"
+                    required
+                  />
+                )}
               </div>
             </div>
           </div>
