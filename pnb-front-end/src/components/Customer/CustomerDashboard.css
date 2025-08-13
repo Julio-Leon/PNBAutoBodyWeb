@@ -216,6 +216,30 @@
   text-transform: capitalize;
 }
 
+.status-badge.pending {
+  background: #fef3c7;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+}
+
+.status-badge.confirmed {
+  background: #dcfce7;
+  color: #14532d;
+  border: 1px solid #22c55e;
+}
+
+.status-badge.completed {
+  background: #e0e7ff;
+  color: #312e81;
+  border: 1px solid #6366f1;
+}
+
+.status-badge.cancelled {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border: 1px solid #ef4444;
+}
+
 .appointment-info h3 {
   color: #333;
   font-size: 18px;
@@ -395,8 +419,9 @@
 /* Action Buttons */
 .appointment-actions {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   margin-top: 16px;
+  margin-bottom: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
@@ -805,6 +830,31 @@
 
 .dark-mode .modal-body p {
   color: #9ca3af;
+}
+
+/* Status Badge Dark Mode Styles */
+.dark-mode .status-badge.pending {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fcd34d;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.dark-mode .status-badge.confirmed {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.dark-mode .status-badge.completed {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.dark-mode .status-badge.cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 /* Responsive Design */

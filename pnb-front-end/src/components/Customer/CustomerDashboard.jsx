@@ -211,21 +211,6 @@ const CustomerDashboard = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending':
-        return '#f59e0b';
-      case 'confirmed':
-        return '#10b981';
-      case 'completed':
-        return '#6366f1';
-      case 'cancelled':
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
-  };
-
   if (!user || user.role !== 'customer') {
     return (
       <div className="customer-dashboard">
@@ -318,7 +303,6 @@ const CustomerDashboard = () => {
                     <div className="appointment-id">#{appointment.id?.slice(-8) || 'N/A'}</div>
                     <div 
                       className={`status-badge ${appointment.status || 'pending'}`}
-                      style={{ backgroundColor: getStatusColor(appointment.status) }}
                     >
                       {getStatusIcon(appointment.status)}
                       {(appointment.status || 'pending').charAt(0).toUpperCase() + (appointment.status || 'pending').slice(1)}
