@@ -444,6 +444,80 @@ const updateAppointmentStatus = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc    Get user's completed appointment history
+ * @route   GET /api/appointments/history
+ * @access  Private (Customer)
+ */
+const getUserAppointmentHistory = asyncHandler(async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    console.log('Fetching appointment history for user:', userEmail);
+
+    const snapshot = await appointmentsCollection
+      .where('email', '==', userEmail)
+      .where('status', '==', 'completed')
+      .orderBy('updatedAt', 'desc')
+      .get();
+
+    const appointments = [];
+    snapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      data: appointments,
+      count: appointments.length
+    });
+  } catch (error) {
+    console.error('Error fetching user appointment history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch appointment history'
+    });
+  }
+});
+
+/**
+ * @desc    Get all completed appointment history (Admin)
+ * @route   GET /api/appointments/admin/history
+ * @access  Private (Admin)
+ */
+const getAdminAppointmentHistory = asyncHandler(async (req, res) => {
+  try {
+    console.log('Fetching admin appointment history');
+
+    const snapshot = await appointmentsCollection
+      .where('status', '==', 'completed')
+      .orderBy('updatedAt', 'desc')
+      .get();
+
+    const appointments = [];
+    snapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      data: appointments,
+      count: appointments.length
+    });
+  } catch (error) {
+    console.error('Error fetching admin appointment history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch appointment history'
+    });
+  }
+});
+
 module.exports = {
   getAppointments,
   getAppointment,
@@ -451,5 +525,7 @@ module.exports = {
   updateAppointment,
   deleteAppointment,
   getUserAppointments,
-  updateAppointmentStatus
+  updateAppointmentStatus,
+  getUserAppointmentHistory,
+  getAdminAppointmentHistory
 };

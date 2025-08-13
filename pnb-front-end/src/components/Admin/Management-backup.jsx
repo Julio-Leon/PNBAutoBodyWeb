@@ -20,7 +20,8 @@ import {
   FileText,
   BarChart3,
   Check,
-  CheckCheck
+  CheckCheck,
+  History
 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
@@ -30,14 +31,132 @@ import './Management.css';
 
 const Management = () => {
   const [appointments, setAppointments] = useState([]);
+  const [appointmentHistory, setAppointmentHistory] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [filter, setFilter] = useState('all');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [modalMode, setModalMode] = useState('view'); // 'view', 'edit'
+  const [activeSection, setActiveSection] = useState('appointments');
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    confirmed: 0,
+    completed: 0
+  });
+
+  const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    fetchAppointments();
+    fetchAppointmentHistory();
+  }, []);
+
+  useEffect(() => {
+    filterAndSearchAppointments();
+  }, [appointments, filter, searchTerm]);
+
+  useEffect(() => {
+    if (appointments.length > 0) {
+      calculateStats(appointments);
+    }
+  }, [appointments]);
+
+  const fetchAppointments = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
+        headers: {
+          'Authorization': `Bearer ${user?.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const appointmentsData = data.data || [];
+        setAppointments(appointmentsData);
+      } else {
+        console.error('Failed to fetch appointments');
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAppointmentHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/appointments/admin/history`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAppointmentHistory(data.data || []);
+      } else {
+        console.error('Failed to fetch appointment history');
+      }
+    } catch (error) {
+      console.error('Error fetching appointment history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const calculateStats = (appointmentsData) => {tePresence } from 'framer-motion';
+import { 
+  Shield, 
+  Calendar, 
+  Clock, 
+  User, 
+  Phone, 
+  Mail, 
+  Car,
+  Eye,
+  Edit,
+  Trash2,
+  RefreshCw,
+  Search,
+  Filter,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  FileText,
+  BarChart3,
+  Check,
+  CheckCheck,
+  History
+} from 'lucide-react';
+import { AuthContext } from '../../contexts/AuthContext';
+import { API_BASE_URL } from '../../config/api';
+import AppointmentModal from './AppointmentModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
+import './Management.css';
+
+const Management = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentHistory, setAppointmentHistory] = useState([]);
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [modalMode, setModalMode] = useState('view'); // 'view', 'edit'
+  const [activeSection, setActiveSection] = useState('appointments');
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -53,7 +172,7 @@ const Management = () => {
 
   useEffect(() => {
     filterAppointments();
-  }, [appointments, searchTerm, statusFilter]);
+  }, [appointments, searchTerm, filter]);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -105,8 +224,8 @@ const Management = () => {
     }
 
     // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(apt => apt.status === statusFilter);
+    if (filter !== 'all') {
+      filtered = filtered.filter(apt => apt.status === filter);
     }
 
     setFilteredAppointments(filtered);
@@ -215,15 +334,33 @@ const Management = () => {
     if (!dateValue) return 'N/A';
     
     let date;
-    if (dateValue instanceof Date) {
+    
+    // Handle Firestore Timestamp objects
+    if (dateValue && typeof dateValue === 'object' && dateValue.toDate) {
+      date = dateValue.toDate();
+    }
+    // Handle JavaScript Date objects
+    else if (dateValue instanceof Date) {
       date = dateValue;
-    } else if (typeof dateValue === 'string') {
-      date = new Date(dateValue);
-    } else {
+    }
+    // Handle ISO date strings from API
+    else if (typeof dateValue === 'string') {
+      // For date-only strings (YYYY-MM-DD), create a local date to avoid timezone issues
+      if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dateValue.split('-').map(Number);
+        date = new Date(year, month - 1, day); // Month is 0-indexed
+      } else {
+        date = new Date(dateValue);
+      }
+    }
+    else {
       return 'N/A';
     }
     
-    if (isNaN(date.getTime())) return 'N/A';
+    // Check if date is valid
+    if (!date || isNaN(date.getTime())) {
+      return 'N/A';
+    }
     
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -332,48 +469,76 @@ const Management = () => {
           </div>
         </motion.div>
 
-        {/* Controls */}
         <motion.div
           className="management-controls"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="search-filter-group">
-            <input
-              type="text"
-              placeholder="Search appointments..."
-              className="search-input"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <select
-              className="filter-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+          <div className="management-tabs">
+            <button
+              className={`tab-btn ${activeSection === 'appointments' ? 'active' : ''}`}
+              onClick={() => setActiveSection('appointments')}
             >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              <Calendar size={16} />
+              Active Appointments
+            </button>
+            <button
+              className={`tab-btn ${activeSection === 'history' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveSection('history');
+                fetchAppointmentHistory();
+              }}
+            >
+              <History size={16} />
+              History
+            </button>
           </div>
+          
+          {activeSection === 'appointments' && (
+            <div className="search-filter-group">
+              <input
+                type="text"
+                placeholder="Search appointments..."
+                className="search-input"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <select
+                className="filter-select"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          )}
+          
           <button
             className="refresh-btn"
-            onClick={fetchAppointments}
-            disabled={loading}
+            onClick={() => {
+              if (activeSection === 'appointments') fetchAppointments();
+              else fetchAppointmentHistory();
+            }}
+            disabled={loading || historyLoading}
           >
-            <RefreshCw size={18} className={loading ? 'spin' : ''} />
+            <RefreshCw size={18} className={loading || historyLoading ? 'spin' : ''} />
           </button>
         </motion.div>
 
-        {/* Appointments Grid */}
-        {loading ? (
-          <div className="loading-spinner-large">
-            <div className="spinner" />
-          </div>
-        ) : filteredAppointments.length === 0 ? (
+        {/* Appointments Section */}
+        {activeSection === 'appointments' && (
+          <>
+            {/* Appointments Grid */}
+            {loading ? (
+              <div className="loading-spinner-large">
+                <div className="spinner" />
+              </div>
+            ) : filteredAppointments.length === 0 ? (
           <motion.div
             className="no-appointments"
             initial={{ opacity: 0 }}
@@ -482,6 +647,88 @@ const Management = () => {
               ))}
             </AnimatePresence>
           </motion.div>
+        )}
+          </>
+        )}
+
+        {/* History Section */}
+        {activeSection === 'history' && (
+          <>
+            {historyLoading ? (
+              <div className="loading-spinner-large">
+                <div className="spinner" />
+                <p>Loading appointment history...</p>
+              </div>
+            ) : appointmentHistory.length === 0 ? (
+              <motion.div
+                className="no-appointments"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 }}
+              >
+                <History className="no-appointments-icon" />
+                <h3>No Appointment History</h3>
+                <p>There are no completed appointments in the system yet.</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="appointments-grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
+                <AnimatePresence>
+                  {appointmentHistory.map((appointment, index) => (
+                    <motion.div
+                      key={appointment.id}
+                      className="appointment-card history-card"
+                      initial={{ opacity: 0, y: 50 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -50 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <div className="appointment-header">
+                        <div className="appointment-id">#{appointment.id?.slice(-8) || 'N/A'}</div>
+                        <div className="status-badge completed">
+                          <CheckCircle size={16} />
+                          Completed
+                        </div>
+                      </div>
+
+                      <div className="appointment-info">
+                        <h3>{appointment.customerName || appointment.name || 'N/A'}</h3>
+                        <div className="appointment-details">
+                          <strong>Service:</strong> {appointment.selectedServices ? 
+                            appointment.selectedServices.join(', ') : 
+                            appointment.damageType || 'N/A'}<br />
+                          <strong>Vehicle:</strong> {appointment.vehicleInfo || 'N/A'}
+                        </div>
+                      </div>
+
+                      <div className="appointment-meta">
+                        <div className="meta-item">
+                          <Calendar size={14} />
+                          {formatDate(appointment.preferredDate)}
+                        </div>
+                        <div className="meta-item">
+                          <Clock size={14} />
+                          {appointment.preferredTime}
+                        </div>
+                        <div className="meta-item">
+                          <User size={14} />
+                          {appointment.email}
+                        </div>
+                      </div>
+
+                      <div className="appointment-footer">
+                        <small>Completed: {new Date(appointment.updatedAt || appointment.createdAt).toLocaleDateString()}</small>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </>
         )}
       </div>
 

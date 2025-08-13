@@ -863,3 +863,91 @@
     margin: 0.5rem;
   }
 }
+
+/* Management Tabs */
+.management-tabs {
+  display: flex;
+  gap: 12px;
+  margin-right: 16px;
+}
+
+.management-tabs .tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 2px solid rgba(71, 85, 105, 0.5);
+  border-radius: 8px;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.management-tabs .tab-btn:hover {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.management-tabs .tab-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.management-tabs .tab-btn svg {
+  flex-shrink: 0;
+}
+
+/* History Cards */
+.appointment-card.history-card {
+  opacity: 0.95;
+  border-left: 4px solid #22c55e;
+}
+
+.appointment-card.history-card:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.appointment-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(71, 85, 105, 0.3);
+  text-align: center;
+}
+
+.appointment-footer small {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Update management controls layout */
+.management-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .management-tabs {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+  
+  .management-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .management-tabs .tab-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

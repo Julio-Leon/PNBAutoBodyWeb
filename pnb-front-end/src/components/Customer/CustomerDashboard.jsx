@@ -16,7 +16,8 @@ import {
   Edit2,
   Trash2,
   Plus,
-  Settings
+  Settings,
+  History
 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
@@ -28,8 +29,10 @@ import './CustomerDashboard.css';
 
 const CustomerDashboard = () => {
   const [appointments, setAppointments] = useState([]);
+  const [appointmentHistory, setAppointmentHistory] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -86,6 +89,44 @@ const CustomerDashboard = () => {
       setError('Network error. Please check your connection.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAppointmentHistory = async () => {
+    setHistoryLoading(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('userToken');
+      console.log('Fetching appointment history with token:', token);
+      
+      if (!token) {
+        setError('Please log in to view your appointment history');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/appointments/history`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('History response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fetched appointment history:', data);
+        setAppointmentHistory(data.data || []);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to fetch appointment history:', errorData);
+        setError(errorData.error || 'Failed to fetch appointment history');
+      }
+    } catch (error) {
+      console.error('Error fetching appointment history:', error);
+      setError('Network error. Please check your connection.');
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -382,13 +423,27 @@ const CustomerDashboard = () => {
                 <Car size={16} />
                 My Vehicles
               </button>
+              <button 
+                className={`tab-btn ${activeSection === 'history' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveSection('history');
+                  fetchAppointmentHistory();
+                }}
+              >
+                <History size={16} />
+                History
+              </button>
             </div>
             <button
               className="refresh-btn"
-              onClick={activeSection === 'appointments' ? fetchUserAppointments : fetchUserVehicles}
-              disabled={loading || vehiclesLoading}
+              onClick={() => {
+                if (activeSection === 'appointments') fetchUserAppointments();
+                else if (activeSection === 'vehicles') fetchUserVehicles();
+                else if (activeSection === 'history') fetchAppointmentHistory();
+              }}
+              disabled={loading || vehiclesLoading || historyLoading}
             >
-              <RefreshCw size={18} className={loading || vehiclesLoading ? 'spin' : ''} />
+              <RefreshCw size={18} className={loading || vehiclesLoading || historyLoading ? 'spin' : ''} />
               Refresh
             </button>
           </div>
@@ -420,7 +475,7 @@ const CustomerDashboard = () => {
                   <p>Loading your appointments...</p>
                 </div>
               </motion.div>
-            ) : appointments.length === 0 ? (
+            ) : appointments.filter(appointment => appointment.status !== 'completed').length === 0 ? (
           <motion.div
             className="no-appointments"
             initial={{ opacity: 0 }}
@@ -428,8 +483,8 @@ const CustomerDashboard = () => {
             transition={{ duration: 0.6 }}
           >
             <Calendar className="no-appointments-icon" />
-            <h3>No appointments found</h3>
-            <p>You haven't scheduled any appointments yet. Would you like to schedule one?</p>
+            <h3>No active appointments found</h3>
+            <p>You don't have any pending or confirmed appointments. Check your History tab for completed appointments.</p>
             <button 
               className="schedule-btn"
               onClick={() => document.getElementById('appointment')?.scrollIntoView({ behavior: 'smooth' })}
@@ -445,7 +500,9 @@ const CustomerDashboard = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <AnimatePresence>
-              {appointments.map((appointment, index) => (
+              {appointments.filter(appointment => 
+                appointment.status !== 'completed'
+              ).map((appointment, index) => (
                 <motion.div
                   key={appointment.id}
                   className="appointment-card"
@@ -645,6 +702,86 @@ const CustomerDashboard = () => {
           </>
         )}
       </div>
+
+      {/* History Section */}
+      {activeSection === 'history' && (
+        <>
+          {historyLoading ? (
+            <div className="loading-spinner">
+              <RefreshCw className="spin" size={24} />
+              <p>Loading appointment history...</p>
+            </div>
+          ) : (
+            <motion.div 
+              className="appointments-grid"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              {appointmentHistory.length === 0 ? (
+                <div className="empty-state">
+                  <History size={64} />
+                  <h3>No Appointment History</h3>
+                  <p>You don't have any completed appointments yet.</p>
+                </div>
+              ) : (
+                <AnimatePresence>
+                  {appointmentHistory.map((appointment, index) => (
+                    <motion.div
+                      key={appointment.id || appointment._id}
+                      className="appointment-card history-card"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <div className="appointment-header">
+                        <div className="appointment-info">
+                          <h3>{appointment.selectedServices ? appointment.selectedServices.join(', ') : appointment.damageType}</h3>
+                          <span className="appointment-id">#{appointment.customAppointmentId}</span>
+                        </div>
+                        <div className="appointment-status completed">
+                          <CheckCircle size={16} />
+                          Completed
+                        </div>
+                      </div>
+
+                      <div className="appointment-details">
+                        <div className="detail-row">
+                          <Calendar size={16} />
+                          <span>Date: {new Date(appointment.preferredDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="detail-row">
+                          <Clock size={16} />
+                          <span>Time: {appointment.preferredTime}</span>
+                        </div>
+                        <div className="detail-row">
+                          <Car size={16} />
+                          <span>Vehicle: {appointment.vehicleInfo}</span>
+                        </div>
+                        <div className="detail-row">
+                          <User size={16} />
+                          <span>Name: {appointment.name}</span>
+                        </div>
+                        {appointment.description && (
+                          <div className="detail-row">
+                            <FileText size={16} />
+                            <span>Description: {appointment.description}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="appointment-footer">
+                        <small>Completed on: {new Date(appointment.updatedAt || appointment.createdAt).toLocaleDateString()}</small>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              )}
+            </motion.div>
+          )}
+        </>
+      )}
 
       {/* Vehicle Modals */}
       <CustomerVehicleModal

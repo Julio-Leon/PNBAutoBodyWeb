@@ -6,7 +6,9 @@ const {
   updateAppointment,
   deleteAppointment,
   getUserAppointments,
-  updateAppointmentStatus
+  updateAppointmentStatus,
+  getUserAppointmentHistory,
+  getAdminAppointmentHistory
 } = require('../controllers/appointmentController');
 
 const { verifyToken, requireStaff, optionalAuth } = require('../middleware/auth');
@@ -33,6 +35,9 @@ router.use(verifyToken);
 // Get user's own appointments
 router.get('/my-appointments', getUserAppointments);
 
+// Get user's appointment history
+router.get('/history', getUserAppointmentHistory);
+
 // Get single appointment
 router.get('/:id', getAppointment);
 
@@ -50,6 +55,9 @@ router.put(
 router.get('/', requireStaff, getAppointments);
 router.delete('/:id', requireStaff, deleteAppointment);
 router.patch('/:id/status', requireStaff, updateAppointmentStatus);
+
+// Admin appointment history
+router.get('/admin/history', requireStaff, getAdminAppointmentHistory);
 
 // Get appointments for a specific user (staff/admin only)
 router.get('/user/:userId', requireStaff, getUserAppointments);

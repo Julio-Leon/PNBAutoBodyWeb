@@ -20,7 +20,8 @@ import {
   FileText,
   BarChart3,
   Check,
-  CheckCheck
+  CheckCheck,
+  History
 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
@@ -30,14 +31,17 @@ import './Management.css';
 
 const Management = () => {
   const [appointments, setAppointments] = useState([]);
+  const [appointmentHistory, setAppointmentHistory] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [filter, setFilter] = useState('all');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [modalMode, setModalMode] = useState('view'); // 'view', 'edit'
+  const [activeSection, setActiveSection] = useState('appointments');
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -49,27 +53,33 @@ const Management = () => {
 
   useEffect(() => {
     fetchAppointments();
+    fetchAppointmentHistory();
   }, []);
 
   useEffect(() => {
-    filterAppointments();
-  }, [appointments, searchTerm, statusFilter]);
+    filterAndSearchAppointments();
+  }, [appointments, filter, searchTerm]);
+
+  useEffect(() => {
+    if (appointments.length > 0) {
+      calculateStats(appointments);
+    }
+  }, [appointments]);
 
   const fetchAppointments = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/appointments`, {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${user?.token}`,
           'Content-Type': 'application/json'
         }
       });
-
+      
       if (response.ok) {
         const data = await response.json();
-        setAppointments(data.data || []);
-        calculateStats(data.data || []);
+        const appointmentsData = data.data || [];
+        setAppointments(appointmentsData);
       } else {
         console.error('Failed to fetch appointments');
       }
@@ -80,36 +90,67 @@ const Management = () => {
     }
   };
 
-  const calculateStats = (appointmentData) => {
-    const newStats = {
-      total: appointmentData.length,
-      pending: appointmentData.filter(apt => apt.status === 'pending').length,
-      confirmed: appointmentData.filter(apt => apt.status === 'confirmed').length,
-      completed: appointmentData.filter(apt => apt.status === 'completed').length
-    };
-    setStats(newStats);
+  const fetchAppointmentHistory = async () => {
+    if (!user?.token) return;
+
+    setHistoryLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/appointments/admin/history`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAppointmentHistory(data.data || []);
+      } else {
+        console.error('Failed to fetch appointment history');
+      }
+    } catch (error) {
+      console.error('Error fetching appointment history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
-  const filterAppointments = () => {
-    let filtered = [...appointments];
+  const calculateStats = (appointmentsData) => {
+    const stats = {
+      total: appointmentsData.length,
+      pending: appointmentsData.filter(apt => apt.status === 'pending').length,
+      confirmed: appointmentsData.filter(apt => apt.status === 'confirmed').length,
+      completed: appointmentsData.filter(apt => apt.status === 'completed').length
+    };
+    setStats(stats);
+  };
 
-    // Filter by search term
+  const filterAndSearchAppointments = () => {
+    let filtered = appointments;
+    
+    if (filter !== 'all') {
+      filtered = filtered.filter(apt => apt.status === filter);
+    }
+    
     if (searchTerm) {
-      filtered = filtered.filter(apt =>
-        apt.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.phone?.includes(searchTerm) ||
-        apt.vehicleInfo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.serviceType?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(apt => 
+        apt.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        apt.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        apt.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        apt.phoneNumber.includes(searchTerm)
       );
     }
-
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(apt => apt.status === statusFilter);
-    }
-
+    
     setFilteredAppointments(filtered);
+  };
+
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+  };
+
+  const handleDelete = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDeleteModal(true);
   };
 
   const handleViewAppointment = (appointment) => {
@@ -131,11 +172,10 @@ const Management = () => {
 
   const confirmDelete = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/appointments/${selectedAppointment.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${user?.token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -152,57 +192,27 @@ const Management = () => {
     }
   };
 
-  const handleUpdateAppointment = async (updatedData) => {
+  const updateAppointmentStatus = async (appointmentId, newStatus) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/appointments/${appointmentId}/status`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatedData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAppointments(prev => 
-          prev.map(apt => apt.id === selectedAppointment.id ? data.data : apt)
-        );
-        setShowModal(false);
-        setSelectedAppointment(null);
-      } else {
-        console.error('Failed to update appointment');
-      }
-    } catch (error) {
-      console.error('Error updating appointment:', error);
-    }
-  };
-
-  const handleStatusUpdate = async (appointmentId, newStatus) => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/appointments/${appointmentId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${user?.token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ status: newStatus })
       });
 
       if (response.ok) {
-        // Update the appointment in state
         setAppointments(prev => 
           prev.map(apt => 
-            apt.id === appointmentId 
-              ? { ...apt, status: newStatus }
-              : apt
+            apt.id === appointmentId ? { ...apt, status: newStatus } : apt
           )
         );
         
-        // Refresh to get accurate stats
-        fetchAppointments();
+        if (newStatus === 'completed') {
+          fetchAppointmentHistory();
+        }
       } else {
         console.error('Failed to update appointment status');
       }
@@ -212,163 +222,90 @@ const Management = () => {
   };
 
   const formatDate = (dateValue) => {
-    if (!dateValue) return 'N/A';
+    if (!dateValue) return 'Not specified';
     
-    let date;
-    
-    // Handle Firestore Timestamp objects
-    if (dateValue && typeof dateValue === 'object' && dateValue.toDate) {
-      date = dateValue.toDate();
-    }
-    // Handle JavaScript Date objects
-    else if (dateValue instanceof Date) {
-      date = dateValue;
-    }
-    // Handle ISO date strings from API
-    else if (typeof dateValue === 'string') {
-      // For date-only strings (YYYY-MM-DD), create a local date to avoid timezone issues
-      if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = dateValue.split('-').map(Number);
-        date = new Date(year, month - 1, day); // Month is 0-indexed
-      } else {
+    try {
+      let date;
+      
+      if (dateValue.seconds) {
+        date = new Date(dateValue.seconds * 1000);
+      } else if (typeof dateValue === 'string') {
         date = new Date(dateValue);
+      } else {
+        return 'Invalid date';
       }
+      
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
     }
-    else {
-      return 'N/A';
-    }
-    
-    // Check if date is valid
-    if (!date || isNaN(date.getTime())) {
-      return 'N/A';
-    }
-    
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const formatTime = (timeString) => {
-    if (!timeString) return 'N/A';
-    return timeString;
+    if (!timeString) return 'Not specified';
+    
+    try {
+      const [hours, minutes] = timeString.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes));
+      
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      return timeString;
+    }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
-        return <Clock size={16} />;
+        return <Clock className="status-icon pending" />;
       case 'confirmed':
-        return <CheckCircle size={16} />;
+        return <CheckCircle className="status-icon confirmed" />;
       case 'completed':
-        return <FileText size={16} />;
+        return <Check className="status-icon completed" />;
       case 'cancelled':
-        return <XCircle size={16} />;
+        return <XCircle className="status-icon cancelled" />;
       default:
-        return <AlertCircle size={16} />;
+        return <AlertCircle className="status-icon" />;
     }
   };
 
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="management-dashboard">
-        <div className="management-container">
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <Shield size={64} style={{ color: 'var(--text-muted)', marginBottom: '1rem' }} />
-            <h2 style={{ color: 'var(--text-color)' }}>Access Denied</h2>
-            <p style={{ color: 'var(--text-muted)' }}>Admin access required</p>
+  const renderAppointments = () => (
+    <div className="appointments-section">
+      <div className="section-header">
+        <div className="header-content">
+          <div className="header-left">
+            <Calendar className="section-icon" />
+            <h2>Appointments Management</h2>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="management-dashboard">
-      <div className="management-container">
-        <motion.div
-          className="management-header"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="management-title">
-            <h1>Management Dashboard</h1>
-            <div className="admin-badge">
-              <Shield size={16} />
-              Admin Panel
+          <div className="header-actions">
+            <div className="search-bar">
+              <Search className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search appointments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
             </div>
-          </div>
-        </motion.div>
-
-        {/* Statistics Cards */}
-        <motion.div
-          className="management-stats"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon total">
-                <BarChart3 />
-              </div>
-            </div>
-            <h3 className="stat-number">{stats.total}</h3>
-            <p className="stat-label">Total Appointments</p>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon pending">
-                <Clock />
-              </div>
-            </div>
-            <h3 className="stat-number">{stats.pending}</h3>
-            <p className="stat-label">Pending</p>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon confirmed">
-                <CheckCircle />
-              </div>
-            </div>
-            <h3 className="stat-number">{stats.confirmed}</h3>
-            <p className="stat-label">Confirmed</p>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-icon completed">
-                <FileText />
-              </div>
-            </div>
-            <h3 className="stat-number">{stats.completed}</h3>
-            <p className="stat-label">Completed</p>
-          </div>
-        </motion.div>
-
-        {/* Controls */}
-        <motion.div
-          className="management-controls"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <div className="search-filter-group">
-            <input
-              type="text"
-              placeholder="Search appointments..."
-              className="search-input"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
             <select
               className="filter-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -376,136 +313,348 @@ const Management = () => {
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
+            <button
+              onClick={() => {
+                fetchAppointments();
+                if (activeSection === 'history') fetchAppointmentHistory();
+              }}
+              className="refresh-btn"
+              title="Refresh"
+            >
+              <RefreshCw className="btn-icon" />
+            </button>
           </div>
-          <button
-            className="refresh-btn"
-            onClick={fetchAppointments}
-            disabled={loading}
-          >
-            <RefreshCw size={18} className={loading ? 'spin' : ''} />
-          </button>
-        </motion.div>
+        </div>
 
-        {/* Appointments Grid */}
-        {loading ? (
-          <div className="loading-spinner-large">
-            <div className="spinner" />
+        <div className="stats-grid">
+          <div className="stat-card total">
+            <div className="stat-icon">
+              <BarChart3 />
+            </div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.total}</span>
+              <span className="stat-label">Total</span>
+            </div>
           </div>
-        ) : filteredAppointments.length === 0 ? (
-          <motion.div
-            className="no-appointments"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Calendar className="no-appointments-icon" />
-            <h3>No appointments found</h3>
-            <p>There are no appointments matching your current filters.</p>
-          </motion.div>
-        ) : (
-          <motion.div
-            className="appointments-grid"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <AnimatePresence>
-              {filteredAppointments.map((appointment, index) => (
-                <motion.div
-                  key={appointment.id}
-                  className="appointment-card"
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -50 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  layout
-                >
-                  <div className="appointment-header">
-                    <div className="appointment-id">#{appointment.id?.slice(-8) || 'N/A'}</div>
-                    <div className={`status-badge ${appointment.status || 'pending'}`}>
-                      {getStatusIcon(appointment.status)}
-                      {appointment.status || 'pending'}
-                    </div>
-                  </div>
-
-                  <div className="appointment-info">
-                    <h3>{appointment.customerName || 'N/A'}</h3>
-                    <div className="appointment-details">
-                      <strong>Service:</strong> {appointment.serviceType || 'N/A'}<br />
-                      <strong>Vehicle:</strong> {appointment.vehicleInfo || 'N/A'}
-                    </div>
-                  </div>
-
-                  <div className="appointment-meta">
-                    <div className="meta-item">
-                      <Calendar size={14} />
-                      {formatDate(appointment.preferredDate)}
-                    </div>
-                    <div className="meta-item">
-                      <Clock size={14} />
-                      {formatTime(appointment.preferredTime)}
-                    </div>
-                    <div className="meta-item">
-                      <Mail size={14} />
-                      {appointment.email || 'N/A'}
-                    </div>
-                  </div>
-
-                  <div className="appointment-actions">
-                    {/* Status Action Buttons */}
-                    {appointment.status === 'pending' && (
-                      <button
-                        className="action-btn confirm"
-                        onClick={() => handleStatusUpdate(appointment.id, 'confirmed')}
-                        title="Confirm Appointment"
-                      >
-                        <Check size={16} />
-                      </button>
-                    )}
-                    
-                    {appointment.status === 'confirmed' && (
-                      <button
-                        className="action-btn complete"
-                        onClick={() => handleStatusUpdate(appointment.id, 'completed')}
-                        title="Mark as Completed"
-                      >
-                        <CheckCheck size={16} />
-                      </button>
-                    )}
-
-                    {/* Standard Action Buttons */}
-                    <button
-                      className="action-btn view"
-                      onClick={() => handleViewAppointment(appointment)}
-                      title="View Details"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className="action-btn edit"
-                      onClick={() => handleEditAppointment(appointment)}
-                      title="Edit Appointment"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      className="action-btn delete"
-                      onClick={() => handleDeleteAppointment(appointment)}
-                      title="Delete Appointment"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        )}
+          <div className="stat-card pending">
+            <div className="stat-icon">
+              <Clock />
+            </div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.pending}</span>
+              <span className="stat-label">Pending</span>
+            </div>
+          </div>
+          <div className="stat-card confirmed">
+            <div className="stat-icon">
+              <CheckCircle />
+            </div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.confirmed}</span>
+              <span className="stat-label">Confirmed</span>
+            </div>
+          </div>
+          <div className="stat-card completed">
+            <div className="stat-icon">
+              <Check />
+            </div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.completed}</span>
+              <span className="stat-label">Completed</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Modals */}
+      <div className="appointments-list">
+        {loading ? (
+          <div className="loading-state">
+            <RefreshCw className="loading-spinner" />
+            <p>Loading appointments...</p>
+          </div>
+        ) : filteredAppointments.length === 0 ? (
+          <div className="empty-state">
+            <Calendar className="empty-icon" />
+            <p>No appointments found</p>
+            <span>Try adjusting your search or filter criteria</span>
+          </div>
+        ) : (
+          <div className="appointments-grid">
+            {filteredAppointments.map((appointment) => (
+              <motion.div
+                key={appointment.id}
+                className="appointment-card"
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="card-header">
+                  <div className="customer-info">
+                    <User className="customer-icon" />
+                    <div>
+                      <h3>{appointment.firstName} {appointment.lastName}</h3>
+                      <div className="contact-info">
+                        <span><Phone className="contact-icon" />{appointment.phoneNumber}</span>
+                        <span><Mail className="contact-icon" />{appointment.email}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="status-badge">
+                    {getStatusIcon(appointment.status)}
+                    <span className={`status-text ${appointment.status}`}>
+                      {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="card-content">
+                  <div className="appointment-details">
+                    <div className="detail-row">
+                      <Calendar className="detail-icon" />
+                      <span>
+                        {formatDate(appointment.appointmentDate)} at {formatTime(appointment.appointmentTime)}
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <Car className="detail-icon" />
+                      <span>{appointment.vehicleYear} {appointment.vehicleMake} {appointment.vehicleModel}</span>
+                    </div>
+                    <div className="detail-row">
+                      <FileText className="detail-icon" />
+                      <span className="services">
+                        {appointment.serviceDetails?.map((service, index) => (
+                          <span key={index} className="service-tag">{service}</span>
+                        )) || 'No services specified'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-actions">
+                  <button
+                    onClick={() => handleViewAppointment(appointment)}
+                    className="action-btn view"
+                    title="View Details"
+                  >
+                    <Eye className="btn-icon" />
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleEditAppointment(appointment)}
+                    className="action-btn edit"
+                    title="Edit Appointment"
+                  >
+                    <Edit className="btn-icon" />
+                    Edit
+                  </button>
+                  
+                  {appointment.status === 'pending' && (
+                    <button
+                      onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
+                      className="action-btn confirm"
+                      title="Confirm Appointment"
+                    >
+                      <CheckCircle className="btn-icon" />
+                      Confirm
+                    </button>
+                  )}
+                  
+                  {appointment.status === 'confirmed' && (
+                    <button
+                      onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
+                      className="action-btn complete"
+                      title="Mark as Completed"
+                    >
+                      <Check className="btn-icon" />
+                      Complete
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => handleDeleteAppointment(appointment)}
+                    className="action-btn delete"
+                    title="Delete Appointment"
+                  >
+                    <Trash2 className="btn-icon" />
+                    Delete
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderHistory = () => (
+    <div className="history-section">
+      <div className="section-header">
+        <div className="header-content">
+          <div className="header-left">
+            <History className="section-icon" />
+            <h2>Appointment History</h2>
+            <span className="section-subtitle">Completed appointments</span>
+          </div>
+          <div className="header-actions">
+            <button
+              onClick={fetchAppointmentHistory}
+              className="refresh-btn"
+              title="Refresh History"
+            >
+              <RefreshCw className="btn-icon" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="history-list">
+        {historyLoading ? (
+          <div className="loading-state">
+            <RefreshCw className="loading-spinner" />
+            <p>Loading appointment history...</p>
+          </div>
+        ) : appointmentHistory.length === 0 ? (
+          <div className="empty-state">
+            <History className="empty-icon" />
+            <p>No completed appointments yet</p>
+            <span>Completed appointments will appear here</span>
+          </div>
+        ) : (
+          <div className="history-grid">
+            {appointmentHistory.map((appointment) => (
+              <motion.div
+                key={appointment.id}
+                className="history-card"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="card-header">
+                  <div className="customer-info">
+                    <User className="customer-icon" />
+                    <div>
+                      <h3>{appointment.firstName} {appointment.lastName}</h3>
+                      <div className="contact-info">
+                        <span><Phone className="contact-icon" />{appointment.phoneNumber}</span>
+                        <span><Mail className="contact-icon" />{appointment.email}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="completion-badge">
+                    <CheckCheck className="completion-icon" />
+                    <span>Completed</span>
+                  </div>
+                </div>
+
+                <div className="card-content">
+                  <div className="appointment-details">
+                    <div className="detail-row">
+                      <Calendar className="detail-icon" />
+                      <span>
+                        {formatDate(appointment.appointmentDate)} at {formatTime(appointment.appointmentTime)}
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <Car className="detail-icon" />
+                      <span>{appointment.vehicleYear} {appointment.vehicleMake} {appointment.vehicleModel}</span>
+                    </div>
+                    <div className="detail-row">
+                      <FileText className="detail-icon" />
+                      <span className="services">
+                        {appointment.serviceDetails?.map((service, index) => (
+                          <span key={index} className="service-tag completed">{service}</span>
+                        )) || 'No services specified'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-actions">
+                  <button
+                    onClick={() => handleViewAppointment(appointment)}
+                    className="action-btn view"
+                    title="View Details"
+                  >
+                    <Eye className="btn-icon" />
+                    View Details
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <motion.div
+      className="management-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="management-header">
+        <div className="header-content">
+          <div className="header-left">
+            <Shield className="header-icon" />
+            <div>
+              <h1>Admin Dashboard</h1>
+              <p>Manage appointments and view system analytics</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="section-tabs">
+          <button
+            className={`tab-btn ${activeSection === 'appointments' ? 'active' : ''}`}
+            onClick={() => setActiveSection('appointments')}
+          >
+            <Calendar className="tab-icon" />
+            Active Appointments
+          </button>
+          <button
+            className={`tab-btn ${activeSection === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveSection('history')}
+          >
+            <History className="tab-icon" />
+            History
+          </button>
+        </div>
+      </div>
+
+      <div className="management-content">
+        <AnimatePresence mode="wait">
+          {activeSection === 'appointments' ? (
+            <motion.div
+              key="appointments"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {renderAppointments()}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="history"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {renderHistory()}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <AnimatePresence>
-        {showModal && selectedAppointment && (
+        {showModal && (
           <AppointmentModal
             appointment={selectedAppointment}
             mode={modalMode}
@@ -513,22 +662,27 @@ const Management = () => {
               setShowModal(false);
               setSelectedAppointment(null);
             }}
-            onUpdate={handleUpdateAppointment}
-          />
-        )}
-
-        {showDeleteModal && selectedAppointment && (
-          <DeleteConfirmModal
-            appointment={selectedAppointment}
-            onClose={() => {
-              setShowDeleteModal(false);
-              setSelectedAppointment(null);
+            onUpdate={() => {
+              fetchAppointments();
+              if (activeSection === 'history') fetchAppointmentHistory();
             }}
-            onConfirm={confirmDelete}
           />
         )}
       </AnimatePresence>
-    </div>
+
+      <AnimatePresence>
+        {showDeleteModal && (
+          <DeleteConfirmModal
+            appointment={selectedAppointment}
+            onConfirm={confirmDelete}
+            onCancel={() => {
+              setShowDeleteModal(false);
+              setSelectedAppointment(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
