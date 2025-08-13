@@ -5,10 +5,10 @@ import Hero from './components/Hero/Hero';
 import Services from './components/Services/Services';
 import BeforeAfter from './components/BeforeAfter/BeforeAfter';
 import Appointment from './components/Appointment/Appointment';
-import AdminLogin from './components/Admin/AdminLogin';
 import Management from './components/Admin/Management';
+import CustomerDashboard from './components/Customer/CustomerDashboard';
 import Register from './components/Auth/Register';
-import UserLogin from './components/Auth/UserLogin';
+import UnifiedLogin from './components/Auth/UnifiedLogin';
 import './App.css';
 
 function App() {
@@ -17,13 +17,14 @@ function App() {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'admin':
-        return <AdminLogin />;
+      case 'login':
+        return <UnifiedLogin onSwitchToRegister={() => setCurrentView('register')} onClose={() => setCurrentView('home')} />;
       case 'management':
         return <Management />;
+      case 'customer-dashboard':
+        return <CustomerDashboard />;
       case 'register':
         return <Register onSwitchToLogin={() => setCurrentView('login')} onClose={() => setCurrentView('home')} />;
-      case 'login':
-        return <UserLogin onSwitchToRegister={() => setCurrentView('register')} onClose={() => setCurrentView('home')} />;
       default:
         return (
           <>
