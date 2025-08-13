@@ -224,32 +224,59 @@ const Header = ({ currentView, setCurrentView }) => {
               
               {/* Admin Login Button */}
               {!user && (
-                <motion.button
-                  className="admin-login-btn"
-                  onClick={() => handleNavigation('admin')}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: navItems.length * 0.1 }}
-                  whileHover={{ y: -2, scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Admin Login"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0.5rem',
-                    background: 'transparent',
-                    border: '2px solid #3b82f6',
-                    borderRadius: '0.5rem',
-                    color: '#3b82f6',
-                    cursor: 'pointer',
-                    minWidth: '2.5rem',
-                    height: '2.5rem',
-                    marginLeft: '0.5rem'
-                  }}
-                >
-                  <Shield size={18} />
-                </motion.button>
+                <>
+                  <motion.button
+                    className="register-btn"
+                    onClick={() => handleNavigation('register')}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: navItems.length * 0.1 }}
+                    whileHover={{ y: -2, scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.5rem 1rem',
+                      background: '#10b981',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      color: 'white',
+                      cursor: 'pointer',
+                      marginRight: '0.5rem',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    Register
+                  </motion.button>
+                  <motion.button
+                    className="admin-login-btn"
+                    onClick={() => handleNavigation('admin')}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: navItems.length * 0.1 }}
+                    whileHover={{ y: -2, scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Admin Login"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.5rem',
+                      background: 'transparent',
+                      border: '2px solid #3b82f6',
+                      borderRadius: '0.5rem',
+                      color: '#3b82f6',
+                      cursor: 'pointer',
+                      minWidth: '2.5rem',
+                      height: '2.5rem',
+                      marginLeft: '0.5rem'
+                    }}
+                  >
+                    <Shield size={18} />
+                  </motion.button>
+                </>
               )}
 
               {/* Admin Status & Logout */}
@@ -399,24 +426,45 @@ const Header = ({ currentView, setCurrentView }) => {
                         {item.isAdmin && <Shield size={16} style={{ marginLeft: 'auto' }} />}
                       </motion.button>
                     ))}
-                    
-                    {/* Mobile Admin Login */}
+                    {/* Mobile Register and Admin Login */}
                     {!user && (
-                      <motion.button
-                        className="mobile-nav-item admin-login"
-                        onClick={() => handleNavigation('admin')}
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ 
-                          duration: 0.3, 
-                          delay: 0.1 + navItems.length * 0.05 
-                        }}
-                        whileHover={{ x: 10, color: '#3b82f6' }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Admin Login
-                        <Shield size={16} style={{ marginLeft: 'auto' }} />
-                      </motion.button>
+                      <>
+                        <motion.button
+                          className="mobile-nav-item register-mobile"
+                          onClick={() => handleNavigation('register')}
+                          initial={{ opacity: 0, x: 50 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ 
+                            duration: 0.3, 
+                            delay: 0.1 + navItems.length * 0.05 
+                          }}
+                          whileHover={{ x: 10, color: '#10b981' }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            background: '#10b981',
+                            color: 'white',
+                            borderRadius: '0.5rem',
+                            marginBottom: '0.5rem'
+                          }}
+                        >
+                          Create Account
+                        </motion.button>
+                        <motion.button
+                          className="mobile-nav-item admin-login"
+                          onClick={() => handleNavigation('admin')}
+                          initial={{ opacity: 0, x: 50 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ 
+                            duration: 0.3, 
+                            delay: 0.1 + (navItems.length + 1) * 0.05 
+                          }}
+                          whileHover={{ x: 10, color: '#3b82f6' }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Admin Login
+                          <Shield size={16} style={{ marginLeft: 'auto' }} />
+                        </motion.button>
+                      </>
                     )}
                   </nav>
 

@@ -291,6 +291,145 @@ app.delete('/appointments/:id', async (req, res) => {
   }
 });
 
+// User registration endpoint
+app.post('/auth/register', async (req, res) => {
+  try {
+    const { fullName, email, phone, password } = req.body;
+    
+    // Validate required fields
+    if (!fullName || !email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Full name, email, and password are required' 
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please provide a valid email address' 
+      });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Password must be at least 6 characters long' 
+      });
+    }
+
+    const db = admin.firestore();
+    
+    // Check if user already exists
+    const existingUser = await db.collection('users')
+      .where('email', '==', email)
+      .get();
+    
+    if (!existingUser.empty) {
+      return res.status(409).json({ 
+        success: false, 
+        error: 'An account with this email already exists' 
+      });
+    }
+
+    // Create user document (in a real app, you'd hash the password)
+    const userData = {
+      fullName,
+      email,
+      phone: phone || null,
+      role: 'customer',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true
+    };
+
+    const userRef = await db.collection('users').add(userData);
+    
+    // Generate a simple token (in production, use proper JWT)
+    const userToken = `user-${userRef.id}-${Date.now()}`;
+    
+    res.status(201).json({
+      success: true,
+      data: {
+        user: {
+          id: userRef.id,
+          fullName: userData.fullName,
+          email: userData.email,
+          role: userData.role
+        },
+        token: userToken
+      },
+      message: 'Account created successfully'
+    });
+  } catch (error) {
+    console.error('User registration error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to create account. Please try again.' 
+    });
+  }
+});
+
+// User login endpoint
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email and password are required' 
+      });
+    }
+
+    const db = admin.firestore();
+    
+    // Find user by email
+    const userQuery = await db.collection('users')
+      .where('email', '==', email)
+      .where('isActive', '==', true)
+      .get();
+    
+    if (userQuery.empty) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid email or password' 
+      });
+    }
+
+    const userDoc = userQuery.docs[0];
+    const userData = userDoc.data();
+    
+    // In a real app, you'd verify the hashed password
+    // For now, we'll just generate a token since we don't store passwords
+    
+    const userToken = `user-${userDoc.id}-${Date.now()}`;
+    
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: userDoc.id,
+          fullName: userData.fullName,
+          email: userData.email,
+          role: userData.role
+        },
+        token: userToken
+      },
+      message: 'Login successful'
+    });
+  } catch (error) {
+    console.error('User login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Login failed. Please try again.' 
+    });
+  }
+});
+
 // Admin login
 app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;

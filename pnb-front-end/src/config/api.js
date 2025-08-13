@@ -7,7 +7,7 @@ const API_CONFIG = {
   development: {
     baseURL: 'http://localhost:5000/api'
   },
-  // Production API (Firebase Functions)
+  // Production API (Firebase Functions) - Function is named 'api', routes are relative to that
   production: {
     baseURL: 'https://us-central1-pnbautobody-33725.cloudfunctions.net/api'
   }
