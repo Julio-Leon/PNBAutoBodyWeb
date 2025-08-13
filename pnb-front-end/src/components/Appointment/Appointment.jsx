@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Calendar, CreditCard, Shield, Phone, Mail, User, Camera, FileText } from 'lucide-react';
 import './Appointment.css';
 import { API_BASE_URL } from '../../config/api';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const Appointment = () => {
+  const { user } = useContext(AuthContext);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,6 +25,18 @@ const Appointment = () => {
   const [dragActive, setDragActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+
+  // Auto-fill user information when user is logged in
+  useEffect(() => {
+    if (user && user.role === 'customer') {
+      setFormData(prev => ({
+        ...prev,
+        name: user.fullName || user.name || user.customerName || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      }));
+    }
+  }, [user]);
 
   const damageTypes = [
     'Collision Damage',
@@ -192,6 +207,9 @@ const Appointment = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
+                  readOnly={user && user.role === 'customer'}
+                  className={user && user.role === 'customer' ? 'readonly-field' : ''}
+                  title={user && user.role === 'customer' ? 'This field is auto-filled from your account' : ''}
                 />
               </div>
               <div className="form-group">
@@ -203,6 +221,9 @@ const Appointment = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
+                  readOnly={user && user.role === 'customer'}
+                  className={user && user.role === 'customer' ? 'readonly-field' : ''}
+                  title={user && user.role === 'customer' ? 'This field is auto-filled from your account' : ''}
                 />
               </div>
               <div className="form-group">
@@ -214,6 +235,9 @@ const Appointment = () => {
                   value={formData.phone}
                   onChange={handleInputChange}
                   required
+                  readOnly={user && user.role === 'customer'}
+                  className={user && user.role === 'customer' ? 'readonly-field' : ''}
+                  title={user && user.role === 'customer' ? 'This field is auto-filled from your account' : ''}
                 />
               </div>
               <div className="form-group">

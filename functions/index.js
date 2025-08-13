@@ -610,6 +610,7 @@ app.get('/auth/verify', async (req, res) => {
           id: userDoc.id,
           fullName: userData.fullName,
           email: userData.email,
+          phone: userData.phone,
           role: userData.role
         }
       }

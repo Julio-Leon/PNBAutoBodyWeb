@@ -162,6 +162,9 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
                     value={formData.customerName}
                     onChange={handleInputChange}
                     required
+                    readOnly
+                    className="readonly-field"
+                    title="Personal information cannot be edited here. Update your account settings to change this."
                   />
                 </div>
                 <div className="form-group">
@@ -173,6 +176,9 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    readOnly
+                    className="readonly-field"
+                    title="Personal information cannot be edited here. Update your account settings to change this."
                   />
                 </div>
                 <div className="form-group">
@@ -184,6 +190,9 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
+                    readOnly
+                    className="readonly-field"
+                    title="Personal information cannot be edited here. Update your account settings to change this."
                   />
                 </div>
               </div>
