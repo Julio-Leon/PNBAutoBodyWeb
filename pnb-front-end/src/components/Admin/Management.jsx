@@ -58,7 +58,7 @@ const Management = () => {
   const fetchAppointments = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`${API_BASE_URL}/appointments`, {
         headers: {
           'Authorization': `Bearer ${token}`,

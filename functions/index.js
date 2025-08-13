@@ -89,6 +89,7 @@ app.get('/appointments', async (req, res) => {
 app.post('/appointments', async (req, res) => {
   try {
     console.log('Received appointment data:', req.body);
+    console.log('Damage type from body:', req.body.damageType);
 
     const db = admin.firestore();
     
@@ -224,10 +225,10 @@ app.put('/appointments/:id', async (req, res) => {
       email: req.body.email || 'N/A',
       phone: req.body.phone || 'N/A',
       vehicleInfo: req.body.vehicleInfo || 'N/A',
-      serviceType: req.body.serviceType || 'N/A',
+      serviceType: req.body.serviceType || req.body.damageType || 'N/A', // Handle both serviceType and damageType
       preferredTime: req.body.preferredTime || null,
       status: req.body.status || 'pending',
-      description: req.body.message || null, // Map message to description field
+      description: req.body.message || req.body.description || null, // Map both message and description fields
       updatedAt: new Date()
     };
 
