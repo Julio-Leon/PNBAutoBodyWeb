@@ -16,8 +16,8 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
+  res.json({ 
+    status: 'OK', 
     message: 'PNJ Auto Body API is running',
     timestamp: new Date().toISOString()
   });
@@ -28,29 +28,16 @@ app.get('/appointments', async (req, res) => {
   try {
     const db = admin.firestore();
     const snapshot = await db.collection('appointments').orderBy('createdAt', 'desc').get();
+    
     const appointments = [];
     snapshot.forEach(doc => {
       const data = doc.data();
-      
-      // Helper function to safely convert dates
-      const convertDate = (dateValue) => {
-        if (!dateValue) return null;
-        if (dateValue.toDate) {
-          return dateValue.toDate().toISOString();
-        }
-        if (dateValue instanceof Date) {
-          return dateValue.toISOString();
-        }
-        return dateValue;
-      };
-      
       appointments.push({
         id: doc.id,
         ...data,
-        createdAt: convertDate(data.createdAt),
-        updatedAt: convertDate(data.updatedAt),
-        preferredDate: convertDate(data.preferredDate),
-        appointmentDate: convertDate(data.appointmentDate)
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+        preferredDate: data.preferredDate?.toDate() // Convert Firestore timestamp to JS Date
       });
     });
 
@@ -65,7 +52,7 @@ app.get('/appointments', async (req, res) => {
 app.post('/appointments', async (req, res) => {
   try {
     console.log('Received appointment data:', req.body);
-
+    
     const db = admin.firestore();
     const appointmentData = {
       customerName: req.body.name || 'N/A',
@@ -84,30 +71,15 @@ app.post('/appointments', async (req, res) => {
       updatedAt: new Date()
     };
 
-    // Handle date conversion carefully - avoid timezone issues
+    // Handle date conversion carefully
     if (req.body.preferredDate) {
       try {
-        // Parse the date as local date to avoid timezone shifts
-        const dateStr = req.body.preferredDate;
-        console.log('Received date string:', dateStr);
-        
-        if (dateStr.includes('T')) {
-          // Already has time info, parse as is
-          const parsedDate = new Date(dateStr);
-          if (!isNaN(parsedDate.getTime())) {
-            appointmentData.preferredDate = parsedDate;
-            console.log('Valid datetime created:', parsedDate);
-          }
+        const parsedDate = new Date(req.body.preferredDate);
+        if (!isNaN(parsedDate.getTime())) {
+          appointmentData.preferredDate = parsedDate;
+          console.log('Valid date created:', parsedDate);
         } else {
-          // Date only (YYYY-MM-DD), create at local noon to avoid timezone issues
-          const [year, month, day] = dateStr.split('-').map(Number);
-          const parsedDate = new Date(year, month - 1, day, 12, 0, 0); // Month is 0-indexed, set time to noon
-          if (!isNaN(parsedDate.getTime())) {
-            appointmentData.preferredDate = parsedDate;
-            console.log('Valid local date created:', parsedDate);
-          } else {
-            console.log('Invalid date format:', dateStr);
-          }
+          console.log('Invalid date provided:', req.body.preferredDate);
         }
       } catch (error) {
         console.error('Date parsing error:', error);
@@ -118,26 +90,9 @@ app.post('/appointments', async (req, res) => {
 
     const docRef = await db.collection('appointments').add(appointmentData);
 
-    // Return the created appointment with properly formatted dates
-    const convertDate = (dateValue) => {
-      if (!dateValue) return null;
-      if (dateValue instanceof Date) {
-        return dateValue.toISOString();
-      }
-      return dateValue;
-    };
-
-    const responseData = {
-      id: docRef.id,
-      ...appointmentData,
-      createdAt: convertDate(appointmentData.createdAt),
-      updatedAt: convertDate(appointmentData.updatedAt),
-      preferredDate: convertDate(appointmentData.preferredDate)
-    };
-
     res.status(201).json({
       success: true,
-      data: responseData,
+      data: { id: docRef.id, ...appointmentData },
       message: 'Appointment created successfully'
     });
   } catch (error) {
@@ -194,30 +149,20 @@ app.put('/appointments/:id', async (req, res) => {
       updatedAt: new Date()
     };
 
-    // Handle date conversion carefully - avoid timezone issues
+    // Handle date conversion carefully
     if (req.body.preferredDate) {
       try {
         const dateStr = req.body.preferredDate;
         console.log('Processing date:', dateStr);
         
-        if (dateStr.includes('T')) {
-          // Already has time info, parse as is
-          const parsedDate = new Date(dateStr);
-          if (!isNaN(parsedDate.getTime())) {
-            updateData.preferredDate = parsedDate;
-            console.log('Valid datetime updated:', parsedDate);
-          }
+        // If it's already a valid date string, create Date object
+        const parsedDate = new Date(dateStr);
+        if (!isNaN(parsedDate.getTime())) {
+          updateData.preferredDate = parsedDate;
+          console.log('Converted date:', parsedDate);
         } else {
-          // Date only (YYYY-MM-DD), create at local noon to avoid timezone issues
-          const [year, month, day] = dateStr.split('-').map(Number);
-          const parsedDate = new Date(year, month - 1, day, 12, 0, 0); // Month is 0-indexed, set time to noon
-          if (!isNaN(parsedDate.getTime())) {
-            updateData.preferredDate = parsedDate;
-            console.log('Valid local date updated:', parsedDate);
-          } else {
-            console.log('Invalid date format, setting to null');
-            updateData.preferredDate = null;
-          }
+          console.log('Invalid date format, setting to null');
+          updateData.preferredDate = null;
         }
       } catch (dateError) {
         console.error('Date conversion error:', dateError);
@@ -236,31 +181,17 @@ app.put('/appointments/:id', async (req, res) => {
     const updatedDoc = await db.collection('appointments').doc(id).get();
     const updatedData = updatedDoc.data();
 
-    // Helper function to safely convert dates
-    const convertDate = (dateValue) => {
-      if (!dateValue) return null;
-      if (dateValue.toDate) {
-        return dateValue.toDate().toISOString();
-      }
-      if (dateValue instanceof Date) {
-        return dateValue.toISOString();
-      }
-      return dateValue;
-    };
-
     console.log('Update successful');
 
-    res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       data: {
         id: updatedDoc.id,
         ...updatedData,
-        createdAt: convertDate(updatedData.createdAt),
-        updatedAt: convertDate(updatedData.updatedAt),
-        preferredDate: convertDate(updatedData.preferredDate),
-        appointmentDate: convertDate(updatedData.appointmentDate)
+        createdAt: updatedData.createdAt?.toDate(),
+        updatedAt: updatedData.updatedAt?.toDate()
       },
-      message: 'Appointment updated successfully'
+      message: 'Appointment updated successfully' 
     });
   } catch (error) {
     console.error('Update appointment error:', error);
@@ -294,7 +225,7 @@ app.delete('/appointments/:id', async (req, res) => {
 // Admin login
 app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
-
+  
   if (username === 'PNBAdmin' && password === 'v83hbv9s73b') {
     res.json({
       success: true,
@@ -311,7 +242,7 @@ app.post('/admin/login', (req, res) => {
 // Admin verify
 app.get('/admin/verify', (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
-
+  
   if (token === 'admin-token-123') {
     res.json({
       success: true,

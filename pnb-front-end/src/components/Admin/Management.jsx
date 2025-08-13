@@ -224,9 +224,15 @@ const Management = () => {
     else if (dateValue instanceof Date) {
       date = dateValue;
     }
-    // Handle date strings
+    // Handle ISO date strings from API
     else if (typeof dateValue === 'string') {
-      date = new Date(dateValue);
+      // For date-only strings (YYYY-MM-DD), create a local date to avoid timezone issues
+      if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dateValue.split('-').map(Number);
+        date = new Date(year, month - 1, day); // Month is 0-indexed
+      } else {
+        date = new Date(dateValue);
+      }
     }
     else {
       return 'N/A';

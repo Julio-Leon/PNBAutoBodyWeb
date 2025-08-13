@@ -1,6 +1,6 @@
 // API Configuration
-// Force production mode for now to ensure Firebase Functions URL is used
-const isDevelopment = false; // Temporarily forced to false
+// Automatically detect environment
+const isDevelopment = import.meta.env.DEV;
 
 const API_CONFIG = {
   // Development API (local server)
