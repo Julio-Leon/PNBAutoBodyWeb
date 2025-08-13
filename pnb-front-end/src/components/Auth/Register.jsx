@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { API_BASE_URL } from '../../config/api';
+import { AuthContext } from '../../contexts/AuthContext';
 import './Register.css';
 
 const Register = ({ onSwitchToLogin, onClose }) => {
+  const { loginUser } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -76,7 +78,7 @@ const Register = ({ onSwitchToLogin, onClose }) => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setMessage('Account created successfully! You can now log in.');
+        setMessage('Account created successfully! Logging you in...');
         setMessageType('success');
         
         // Reset form
@@ -88,10 +90,28 @@ const Register = ({ onSwitchToLogin, onClose }) => {
           confirmPassword: ''
         });
         
-        // Switch to login after a delay
-        setTimeout(() => {
-          if (onSwitchToLogin) onSwitchToLogin();
-        }, 2000);
+        // Automatically log the user in
+        try {
+          const loginResult = await loginUser(registrationData.email, registrationData.password);
+          if (loginResult.success) {
+            setMessage('Registration successful! Welcome!');
+            // Close modal or redirect to home after a delay
+            setTimeout(() => {
+              if (onClose) onClose();
+            }, 1500);
+          } else {
+            setMessage('Account created successfully! Please log in to continue.');
+            setTimeout(() => {
+              if (onSwitchToLogin) onSwitchToLogin();
+            }, 2000);
+          }
+        } catch (loginError) {
+          console.error('Auto-login error:', loginError);
+          setMessage('Account created successfully! Please log in to continue.');
+          setTimeout(() => {
+            if (onSwitchToLogin) onSwitchToLogin();
+          }, 2000);
+        }
       } else {
         setMessage(result.error || 'Failed to create account. Please try again.');
         setMessageType('error');

@@ -27,7 +27,31 @@ app.get('/health', (req, res) => {
 app.get('/appointments', async (req, res) => {
   try {
     const db = admin.firestore();
-    const snapshot = await db.collection('appointments').orderBy('createdAt', 'desc').get();
+    let query = db.collection('appointments');
+    
+    // Check if user is authenticated
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    let currentUser = null;
+    
+    if (token) {
+      // Determine user type and ID from token
+      if (token === 'admin-token-123') {
+        // Admin can see all appointments
+        currentUser = { role: 'admin' };
+      } else if (token.startsWith('user-')) {
+        // Regular user - extract user ID
+        const tokenParts = token.split('-');
+        if (tokenParts.length >= 2) {
+          const userId = tokenParts[1];
+          currentUser = { role: 'customer', id: userId };
+          
+          // Filter appointments by user ID
+          query = query.where('userId', '==', userId);
+        }
+      }
+    }
+    
+    const snapshot = await query.orderBy('createdAt', 'desc').get();
     const appointments = [];
     snapshot.forEach(doc => {
       const data = doc.data();
@@ -67,6 +91,18 @@ app.post('/appointments', async (req, res) => {
     console.log('Received appointment data:', req.body);
 
     const db = admin.firestore();
+    
+    // Check if user is authenticated and get user ID
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    let userId = null;
+    
+    if (token && token.startsWith('user-')) {
+      const tokenParts = token.split('-');
+      if (tokenParts.length >= 2) {
+        userId = tokenParts[1];
+      }
+    }
+    
     const appointmentData = {
       customerName: req.body.name || 'N/A',
       email: req.body.email || 'N/A',
@@ -81,7 +117,8 @@ app.post('/appointments', async (req, res) => {
       isUrgent: req.body.isUrgent || false,
       status: 'pending',
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      userId: userId // Associate with logged-in user
     };
 
     // Handle date conversion carefully - avoid timezone issues
@@ -427,6 +464,54 @@ app.post('/auth/login', async (req, res) => {
       success: false, 
       error: 'Login failed. Please try again.' 
     });
+  }
+});
+
+// User authentication verification
+app.get('/auth/verify', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    // Extract user ID from token (simple token format: user-{id}-{timestamp})
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 2 || tokenParts[0] !== 'user') {
+      return res.status(401).json({ success: false, error: 'Invalid token format' });
+    }
+
+    const userId = tokenParts[1];
+    const db = admin.firestore();
+    
+    // Verify user exists and is active
+    const userDoc = await db.collection('users').doc(userId).get();
+    
+    if (!userDoc.exists) {
+      return res.status(401).json({ success: false, error: 'User not found' });
+    }
+
+    const userData = userDoc.data();
+    
+    if (!userData.isActive) {
+      return res.status(401).json({ success: false, error: 'Account is inactive' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: userDoc.id,
+          fullName: userData.fullName,
+          email: userData.email,
+          role: userData.role
+        }
+      }
+    });
+  } catch (error) {
+    console.error('User verification error:', error);
+    res.status(500).json({ success: false, error: 'Token verification failed' });
   }
 });
 

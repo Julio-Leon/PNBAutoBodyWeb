@@ -8,6 +8,7 @@ import Appointment from './components/Appointment/Appointment';
 import AdminLogin from './components/Admin/AdminLogin';
 import Management from './components/Admin/Management';
 import Register from './components/Auth/Register';
+import UserLogin from './components/Auth/UserLogin';
 import './App.css';
 
 function App() {
@@ -20,7 +21,9 @@ function App() {
       case 'management':
         return <Management />;
       case 'register':
-        return <Register onSwitchToLogin={() => setCurrentView('admin')} onClose={() => setCurrentView('home')} />;
+        return <Register onSwitchToLogin={() => setCurrentView('login')} onClose={() => setCurrentView('home')} />;
+      case 'login':
+        return <UserLogin onSwitchToRegister={() => setCurrentView('register')} onClose={() => setCurrentView('home')} />;
       default:
         return (
           <>

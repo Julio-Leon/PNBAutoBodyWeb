@@ -104,12 +104,20 @@ const Appointment = () => {
 
       console.log('Sending appointment data:', appointmentData);
 
+      // Get user token if available
+      const userToken = localStorage.getItem('userToken');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (userToken) {
+        headers['Authorization'] = `Bearer ${userToken}`;
+      }
+
       // Submit to backend
       const response = await fetch(`${API_BASE_URL}/appointments`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(appointmentData),
       });
 

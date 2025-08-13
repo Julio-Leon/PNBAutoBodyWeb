@@ -103,7 +103,19 @@ const Header = ({ currentView, setCurrentView }) => {
     { label: 'Appointment', id: 'appointment', action: () => scrollToSection('appointment') }
   ];
 
-  // Add admin navigation items if user is logged in
+  // Add customer navigation items if user is logged in as customer
+  if (user && user.role === 'customer') {
+    navItems.push(
+      { 
+        label: 'My Appointments', 
+        id: 'management', 
+        action: () => handleNavigation('management'),
+        isCustomer: true 
+      }
+    );
+  }
+
+  // Add admin navigation items if user is logged in as admin
   if (user && user.role === 'admin') {
     navItems.push(
       { 
@@ -209,12 +221,12 @@ const Header = ({ currentView, setCurrentView }) => {
               {navItems.map((item, index) => (
                 <motion.button
                   key={item.id}
-                  className={`nav-item ${item.isAdmin ? 'admin-nav-item' : ''} ${currentView === item.id || (item.id === 'hero' && currentView === 'home') ? 'active' : ''}`}
+                  className={`nav-item ${item.isAdmin ? 'admin-nav-item' : ''} ${item.isCustomer ? 'customer-nav-item' : ''} ${currentView === item.id || (item.id === 'hero' && currentView === 'home') ? 'active' : ''}`}
                   onClick={item.action}
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ y: -2, scale: item.isAdmin ? 1.05 : 1 }}
+                  whileHover={{ y: -2, scale: item.isAdmin || item.isCustomer ? 1.05 : 1 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   {item.isAdmin && <Shield size={16} style={{ marginRight: '0.5rem' }} />}
@@ -222,9 +234,34 @@ const Header = ({ currentView, setCurrentView }) => {
                 </motion.button>
               ))}
               
-              {/* Admin Login Button */}
+              {/* Register and Login Buttons */}
               {!user && (
                 <>
+                  <motion.button
+                    className="login-btn"
+                    onClick={() => handleNavigation('login')}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: navItems.length * 0.1 }}
+                    whileHover={{ y: -2, scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.5rem 1rem',
+                      background: '#3b82f6',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      color: 'white',
+                      cursor: 'pointer',
+                      marginRight: '0.5rem',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    Login
+                  </motion.button>
                   <motion.button
                     className="register-btn"
                     onClick={() => handleNavigation('register')}
@@ -279,17 +316,17 @@ const Header = ({ currentView, setCurrentView }) => {
                 </>
               )}
 
-              {/* Admin Status & Logout */}
-              {user && user.role === 'admin' && (
+              {/* User Status & Logout */}
+              {user && (
                 <motion.div
-                  className="admin-status"
+                  className="user-status"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <div className="admin-info">
-                    <Shield size={16} />
-                    <span>Admin</span>
+                  <div className="user-info">
+                    {user.role === 'admin' && <Shield size={16} />}
+                    <span>{user.role === 'admin' ? 'Admin' : user.fullName || 'User'}</span>
                   </div>
                   <button
                     className="logout-btn"

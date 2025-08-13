@@ -25,15 +25,17 @@ export const AuthProvider = ({ children }) => {
 
     setIsChecking(true);
     try {
-      const token = localStorage.getItem('adminToken');
-      if (token) {
-        // Increase timeout and add better error handling
+      const adminToken = localStorage.getItem('adminToken');
+      const userToken = localStorage.getItem('userToken');
+      
+      if (adminToken) {
+        // Check admin authentication
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const response = await fetch(`${API_BASE_URL}/admin/verify`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${adminToken}`,
             'Content-Type': 'application/json'
           },
           signal: controller.signal
@@ -48,6 +50,28 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('adminToken');
           setUser(null);
         }
+      } else if (userToken) {
+        // Check user authentication
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+          headers: {
+            'Authorization': `Bearer ${userToken}`,
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.data.user);
+        } else {
+          localStorage.removeItem('userToken');
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -58,6 +82,7 @@ export const AuthProvider = ({ children }) => {
         // Only clear auth on actual auth failures, not network issues
         if (error.message && error.message.includes('401')) {
           localStorage.removeItem('adminToken');
+          localStorage.removeItem('userToken');
           setUser(null);
         }
       }
@@ -91,14 +116,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const userLogin = async (email, password) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('userToken', data.data.token);
+        setUser(data.data.user);
+        return { success: true, data: data.data };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error || 'Login failed' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('userToken');
     setUser(null);
   };
 
   const forceReset = () => {
     // Clear all potential auth-related data
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('userToken');
     sessionStorage.clear();
     setUser(null);
     setLoading(false);
@@ -107,6 +158,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     login,
+    userLogin,
     logout,
     forceReset,
     loading
