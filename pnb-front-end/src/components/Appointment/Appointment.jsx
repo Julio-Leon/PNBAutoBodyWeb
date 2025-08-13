@@ -14,7 +14,8 @@ const Appointment = () => {
     phone: '',
     vehicleInfo: '',
     vehicleId: '', // New field for selected vehicle ID
-    damageType: '',
+    serviceType: '',
+    selectedServices: [],
     description: '',
     paymentMethod: 'insurance',
     insuranceCompany: '',
@@ -75,15 +76,41 @@ const Appointment = () => {
     }
   };
 
-  const damageTypes = [
-    'Collision Damage',
-    'Dent Repair',
-    'Scratch Repair',
-    'Paint Touch-up',
-    'Bumper Repair',
-    'Hail Damage',
-    'Other'
+  const serviceTypes = [
+    { value: 'maintenance', label: 'Maintenance' },
+    { value: 'mechanical', label: 'Mechanical Repairs' },
+    { value: 'body', label: 'Body Repairs' }
   ];
+
+  const serviceOptions = {
+    maintenance: [
+      'Tune-up',
+      'Tires',
+      'Oil Change',
+      'Inspections'
+    ],
+    mechanical: [
+      'Engine Problems',
+      'Transmission Issues',
+      'Brake System',
+      'Electrical Problems',
+      'Cooling System',
+      'Exhaust System',
+      'Suspension & Steering',
+      'Air Conditioning',
+      'Battery & Charging',
+      'Other Mechanical'
+    ],
+    body: [
+      'Collision Damage',
+      'Dent Repair',
+      'Scratch Repair',
+      'Paint Touch-up',
+      'Bumper Repair',
+      'Hail Damage',
+      'Other Body Damage'
+    ]
+  };
 
   const insuranceCompanies = [
     'State Farm',
@@ -123,10 +150,41 @@ const Appointment = () => {
       return;
     }
     
+    // Handle service type change - reset selected services when service type changes
+    if (name === 'serviceType') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        selectedServices: []
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleServiceSelection = (service) => {
+    setFormData(prev => {
+      const currentServices = prev.selectedServices || [];
+      const isSelected = currentServices.includes(service);
+      
+      if (isSelected) {
+        // Remove service if already selected
+        return {
+          ...prev,
+          selectedServices: currentServices.filter(s => s !== service)
+        };
+      } else {
+        // Add service if not selected
+        return {
+          ...prev,
+          selectedServices: [...currentServices, service]
+        };
+      }
+    });
   };
 
   const handleFileUpload = (files) => {
@@ -178,6 +236,19 @@ const Appointment = () => {
         }
       }
 
+      // Validate service selection
+      if (!formData.serviceType) {
+        setSubmitMessage('Please select a service type.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!formData.selectedServices || formData.selectedServices.length === 0) {
+        setSubmitMessage('Please select at least one service.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create JSON payload instead of FormData for better backend compatibility
       const appointmentData = {
         name: formData.name,
@@ -185,7 +256,9 @@ const Appointment = () => {
         phone: formData.phone,
         vehicleInfo: formData.vehicleInfo,
         vehicleId: formData.vehicleId || null, // Include selected vehicle ID
-        damageType: formData.damageType,
+        serviceType: formData.serviceType,
+        selectedServices: formData.selectedServices,
+        damageType: formData.selectedServices.join(', '), // For backward compatibility
         description: formData.description,
         paymentMethod: formData.paymentMethod,
         preferredDate: formData.preferredDate,
@@ -224,7 +297,8 @@ const Appointment = () => {
           phone: '',
           vehicleInfo: '',
           vehicleId: '', // Reset selected vehicle
-          damageType: '',
+          serviceType: '',
+          selectedServices: [],
           description: '',
           paymentMethod: 'insurance',
           insuranceCompany: '',
@@ -389,34 +463,68 @@ const Appointment = () => {
             </div>
           </div>
 
-          {/* Damage Information */}
+          {/* Service Information */}
           <div className="form-section">
-            <h3><FileText size={20} /> Damage Details</h3>
+            <h3><FileText size={20} /> Service Details</h3>
             <div className="form-grid">
               <div className="form-group">
-                <label htmlFor="damageType">Type of Damage *</label>
+                <label htmlFor="serviceType">Type of Service *</label>
                 <select
-                  id="damageType"
-                  name="damageType"
-                  value={formData.damageType}
+                  id="serviceType"
+                  name="serviceType"
+                  value={formData.serviceType}
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="">Select damage type</option>
-                  {damageTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
+                  <option value="">Select service type</option>
+                  {serviceTypes.map((type) => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
                   ))}
                 </select>
               </div>
+              
+              {formData.serviceType && (
+                <div className="form-group full-width">
+                  <label>Services Needed * (Select all that apply)</label>
+                  <div className="service-options">
+                    {serviceOptions[formData.serviceType].map((service) => (
+                      <label 
+                        key={service} 
+                        className={`service-option ${formData.selectedServices.includes(service) ? 'selected' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.selectedServices.includes(service)}
+                          onChange={() => handleServiceSelection(service)}
+                        />
+                        <span className="checkmark"></span>
+                        {service}
+                      </label>
+                    ))}
+                  </div>
+                  {formData.selectedServices.length === 0 && (
+                    <small className="service-hint">Please select at least one service</small>
+                  )}
+                </div>
+              )}
+              
               <div className="form-group full-width">
-                <label htmlFor="description">Damage Description</label>
+                <label htmlFor="description">
+                  {formData.serviceType === 'maintenance' ? 'Additional Details' : 
+                   formData.serviceType === 'mechanical' ? 'Problem Description' : 
+                   'Damage Description'}
+                </label>
                 <textarea
                   id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="3"
-                  placeholder="Please describe the damage in detail..."
+                  placeholder={
+                    formData.serviceType === 'maintenance' ? 'Any specific maintenance needs or concerns...' : 
+                    formData.serviceType === 'mechanical' ? 'Please describe the mechanical problem in detail...' : 
+                    'Please describe the damage in detail...'
+                  }
                 />
               </div>
             </div>

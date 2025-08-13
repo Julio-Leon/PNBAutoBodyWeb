@@ -579,3 +579,105 @@
 .dark-mode .payment-option input:checked + .option-content svg {
   color: #60a5fa;
 }
+
+/* Service Selection Styles */
+.service-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.service-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 2px solid rgba(71, 85, 105, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+  backdrop-filter: blur(10px);
+}
+
+.service-option:hover {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.service-option:has(input:checked) {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.6);
+  color: #93c5fd;
+}
+
+/* Fallback for browsers that don't support :has() */
+.service-option.selected {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.6);
+  color: #93c5fd;
+}
+
+.service-option input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  width: 0;
+  height: 0;
+}
+
+.service-option .checkmark {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.service-option input:checked ~ .checkmark {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.service-option .checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.service-option input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.service-hint {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 8px;
+  display: block;
+}
+
+/* Responsive adjustments for service options */
+@media (min-width: 768px) {
+  .service-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .service-options {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

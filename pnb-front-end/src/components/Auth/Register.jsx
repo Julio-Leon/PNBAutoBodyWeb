@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { User, Mail, Phone, Lock, UserPlus } from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 import './Register.css';
 
@@ -106,123 +108,151 @@ const Register = ({ onSwitchToLogin, onClose }) => {
   };
 
   return (
-    <div className="register-container">
-      <div className="register-card">
-        <div className="register-header">
+    <section className="register-section">
+      <div className="container">
+        <motion.div 
+          className="section-header"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
           <h2>Create Account</h2>
           <p>Join PNJ Auto Body for appointment management</p>
+        </motion.div>
+
+        <motion.div 
+          className="register-form-container"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
           {onClose && (
             <button className="close-button" onClick={onClose} aria-label="Close">
               ✕
             </button>
           )}
-        </div>
 
-        {message && (
-          <div className={`message ${messageType}`}>
-            {message}
-          </div>
-        )}
+          {message && (
+            <div className={`message ${messageType}`}>
+              {message}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="register-form">
-          <div className="form-group">
-            <label htmlFor="fullName">Full Name *</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
+          <form onSubmit={handleSubmit} className="register-form">
+            {/* Personal Information */}
+            <div className="form-section">
+              <h3><User size={20} /> Personal Information</h3>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="fullName">Full Name *</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitting}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">Email Address *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitting}
+                    placeholder="Enter your email address"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="phone">Phone Number (Optional)</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Security Information */}
+            <div className="form-section">
+              <h3><Lock size={20} /> Security Information</h3>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="password">Password *</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitting}
+                    placeholder="Password must be at least 6 characters"
+                  />
+                  <small className="password-hint">Password must be at least 6 characters</small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm Password *</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitting}
+                    placeholder="Re-enter your password"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className="register-button"
               disabled={isSubmitting}
-              placeholder="Enter your full name"
-            />
+            >
+              <UserPlus size={20} />
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </form>
+
+          <div className="register-footer">
+            <p>
+              Already have an account?{' '}
+              {onSwitchToLogin ? (
+                <button 
+                  type="button" 
+                  className="link-button"
+                  onClick={onSwitchToLogin}
+                  disabled={isSubmitting}
+                >
+                  Sign In
+                </button>
+              ) : (
+                <span>Please contact support</span>
+              )}
+            </p>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-              placeholder="Enter your email address"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number (Optional)</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              placeholder="Enter your phone number"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password *</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-              placeholder="Password must be at least 6 characters"
-            />
-            <small className="password-hint">Password must be at least 6 characters</small>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password *</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-              placeholder="Re-enter your password"
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            className="register-button"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
-
-        <div className="register-footer">
-          <p>
-            Already have an account?{' '}
-            {onSwitchToLogin ? (
-              <button 
-                type="button" 
-                className="link-button"
-                onClick={onSwitchToLogin}
-                disabled={isSubmitting}
-              >
-                Sign In
-              </button>
-            ) : (
-              <span>Please contact support</span>
-            )}
-          </p>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </section>
   );
 };
 
