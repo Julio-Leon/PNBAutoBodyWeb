@@ -13,28 +13,41 @@ import {
   CheckCircle,
   XCircle,
   Edit,
-  Trash2
+  Edit2,
+  Trash2,
+  Plus,
+  Settings
 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
 import CustomerAppointmentModal from './CustomerAppointmentModal';
 import CustomerDeleteConfirmModal from './CustomerDeleteConfirmModal';
+import CustomerVehicleModal from './CustomerVehicleModal';
+import CustomerVehicleDeleteModal from './CustomerVehicleDeleteModal';
 import './CustomerDashboard.css';
 
 const CustomerDashboard = () => {
   const [appointments, setAppointments] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [vehiclesLoading, setVehiclesLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showVehicleModal, setShowVehicleModal] = useState(false);
+  const [showVehicleDeleteModal, setShowVehicleDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingVehicle, setIsDeletingVehicle] = useState(false);
+  const [activeSection, setActiveSection] = useState('appointments');
 
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
     if (user) {
       fetchUserAppointments();
+      fetchUserVehicles();
     }
   }, [user]);
 
@@ -159,6 +172,121 @@ const CustomerDashboard = () => {
     }
   };
 
+  // Vehicle Management Functions
+  const fetchUserVehicles = async () => {
+    setVehiclesLoading(true);
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        setError('Please log in to view your vehicles');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/vehicles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVehicles(data.data || []);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to fetch vehicles:', errorData);
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+    } finally {
+      setVehiclesLoading(false);
+    }
+  };
+
+  const handleAddVehicle = () => {
+    setSelectedVehicle(null);
+    setShowVehicleModal(true);
+  };
+
+  const handleEditVehicle = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setShowVehicleModal(true);
+  };
+
+  const handleDeleteVehicle = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setShowVehicleDeleteModal(true);
+  };
+
+  const handleSaveVehicle = async (vehicleData) => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        return { success: false, error: 'Please log in to manage vehicles' };
+      }
+
+      const url = selectedVehicle 
+        ? `${API_BASE_URL}/vehicles/${selectedVehicle.id}`
+        : `${API_BASE_URL}/vehicles`;
+      
+      const method = selectedVehicle ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(vehicleData)
+      });
+
+      if (response.ok) {
+        await fetchUserVehicles();
+        return { success: true };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error || 'Failed to save vehicle' };
+      }
+    } catch (error) {
+      console.error('Error saving vehicle:', error);
+      return { success: false, error: 'Network error occurred' };
+    }
+  };
+
+  const handleConfirmDeleteVehicle = async (vehicleId) => {
+    setIsDeletingVehicle(true);
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        setError('Please log in to delete vehicles');
+        return false;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        await fetchUserVehicles();
+        return true;
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to delete vehicle');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      setError('Network error occurred');
+      return false;
+    } finally {
+      setIsDeletingVehicle(false);
+    }
+  };
+
   const formatDate = (dateValue) => {
     if (!dateValue) return 'N/A';
     
@@ -235,17 +363,35 @@ const CustomerDashboard = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="dashboard-title">
-            <h1>My Appointments</h1>
+            <h1>Dashboard</h1>
             <p>Welcome back, {user.fullName || user.name || 'Customer'}</p>
           </div>
-          <button
-            className="refresh-btn"
-            onClick={fetchUserAppointments}
-            disabled={loading}
-          >
-            <RefreshCw size={18} className={loading ? 'spin' : ''} />
-            Refresh
-          </button>
+          <div className="dashboard-actions">
+            <div className="section-tabs">
+              <button 
+                className={`tab-btn ${activeSection === 'appointments' ? 'active' : ''}`}
+                onClick={() => setActiveSection('appointments')}
+              >
+                <Calendar size={16} />
+                My Appointments
+              </button>
+              <button 
+                className={`tab-btn ${activeSection === 'vehicles' ? 'active' : ''}`}
+                onClick={() => setActiveSection('vehicles')}
+              >
+                <Car size={16} />
+                My Vehicles
+              </button>
+            </div>
+            <button
+              className="refresh-btn"
+              onClick={activeSection === 'appointments' ? fetchUserAppointments : fetchUserVehicles}
+              disabled={loading || vehiclesLoading}
+            >
+              <RefreshCw size={18} className={loading || vehiclesLoading ? 'spin' : ''} />
+              Refresh
+            </button>
+          </div>
         </motion.div>
 
         {error && (
@@ -259,12 +405,22 @@ const CustomerDashboard = () => {
           </motion.div>
         )}
 
-        {loading ? (
-          <div className="loading-spinner-large">
-            <div className="spinner" />
-            <p>Loading your appointments...</p>
-          </div>
-        ) : appointments.length === 0 ? (
+        {/* Appointments Section */}
+        {activeSection === 'appointments' && (
+          <>
+            {loading ? (
+              <motion.div
+                className="loading-container"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="loading-spinner-large">
+                  <div className="spinner" />
+                  <p>Loading your appointments...</p>
+                </div>
+              </motion.div>
+            ) : appointments.length === 0 ? (
           <motion.div
             className="no-appointments"
             initial={{ opacity: 0 }}
@@ -373,7 +529,144 @@ const CustomerDashboard = () => {
             </AnimatePresence>
           </motion.div>
         )}
+          </>
+        )}
+
+        {/* Vehicles Section */}
+        {activeSection === 'vehicles' && (
+          <>
+            {vehiclesLoading ? (
+              <motion.div
+                className="loading-container"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="loading-spinner-large">
+                  <div className="spinner" />
+                  <p>Loading your vehicles...</p>
+                </div>
+              </motion.div>
+            ) : vehicles.length === 0 ? (
+              <motion.div
+                className="no-appointments"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 }}
+              >
+                <Car className="no-appointments-icon" />
+                <h3>No vehicles found</h3>
+                <p>You haven't added any vehicles yet. Would you like to add one?</p>
+                <button 
+                  className="primary-button"
+                  onClick={handleAddVehicle}
+                  style={{ marginTop: '1rem' }}
+                >
+                  <Plus size={18} />
+                  Add Vehicle
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="appointments-grid"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="appointments-header">
+                  <h3>Your Vehicles ({vehicles.length})</h3>
+                  <button 
+                    className="add-appointment-btn"
+                    onClick={handleAddVehicle}
+                  >
+                    <Plus size={18} />
+                    Add Vehicle
+                  </button>
+                </div>
+                <AnimatePresence mode="popLayout">
+                  {vehicles.map((vehicle) => (
+                    <motion.div
+                      key={vehicle.id}
+                      className="appointment-card"
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ 
+                        y: -5,
+                        transition: { duration: 0.2 }
+                      }}
+                    >
+                      <div className="appointment-header">
+                        <div>
+                          <h4>{vehicle.year} {vehicle.make} {vehicle.model}</h4>
+                          {vehicle.color && <span className="service-type">{vehicle.color}</span>}
+                        </div>
+                        <div className="appointment-actions">
+                          <button
+                            className="action-btn edit-btn"
+                            onClick={() => handleEditVehicle(vehicle)}
+                            title="Edit Vehicle"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            className="action-btn delete-btn"
+                            onClick={() => handleDeleteVehicle(vehicle)}
+                            title="Delete Vehicle"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="appointment-details">
+                        {vehicle.vin && (
+                          <div className="detail-row">
+                            <strong>VIN:</strong> {vehicle.vin}
+                          </div>
+                        )}
+                        {vehicle.licensePlate && (
+                          <div className="detail-row">
+                            <strong>License Plate:</strong> {vehicle.licensePlate}
+                          </div>
+                        )}
+                        {vehicle.otherDetails && (
+                          <div className="detail-row">
+                            <strong>Other Details:</strong> {vehicle.otherDetails}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Vehicle Modals */}
+      <CustomerVehicleModal
+        vehicle={selectedVehicle}
+        isOpen={showVehicleModal}
+        onClose={() => {
+          setShowVehicleModal(false);
+          setSelectedVehicle(null);
+        }}
+        onSave={handleSaveVehicle}
+      />
+
+      <CustomerVehicleDeleteModal
+        vehicle={selectedVehicle}
+        isOpen={showVehicleDeleteModal}
+        onClose={() => {
+          setShowVehicleDeleteModal(false);
+          setSelectedVehicle(null);
+        }}
+        onConfirm={handleConfirmDeleteVehicle}
+        isDeleting={isDeletingVehicle}
+      />
 
       {/* Edit Modal */}
       <CustomerAppointmentModal

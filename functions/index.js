@@ -652,5 +652,218 @@ app.get('/admin/verify', (req, res) => {
   }
 });
 
+// Vehicle Management Endpoints
+
+// Get user vehicles
+app.get('/vehicles', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    // Extract user ID from token
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 2 || tokenParts[0] !== 'user') {
+      return res.status(401).json({ success: false, error: 'Invalid token format' });
+    }
+
+    const userId = tokenParts[1];
+    const db = admin.firestore();
+    
+    // Get user's vehicles
+    const vehiclesSnapshot = await db.collection('vehicles')
+      .where('userId', '==', userId)
+      .get();
+
+    const vehicles = [];
+    vehiclesSnapshot.forEach(doc => {
+      vehicles.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // Sort by createdAt in JavaScript instead of Firestore
+    vehicles.sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+      return 0;
+    });
+
+    res.json({
+      success: true,
+      data: vehicles
+    });
+
+  } catch (error) {
+    console.error('Error fetching vehicles:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch vehicles' });
+  }
+});
+
+// Add new vehicle
+app.post('/vehicles', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    // Extract user ID from token
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 2 || tokenParts[0] !== 'user') {
+      return res.status(401).json({ success: false, error: 'Invalid token format' });
+    }
+
+    const userId = tokenParts[1];
+    const { make, model, year, color, vin, licensePlate, notes } = req.body;
+
+    // Validation
+    if (!make || !model || !year) {
+      return res.status(400).json({ success: false, error: 'Make, model, and year are required' });
+    }
+
+    const db = admin.firestore();
+    const vehicleData = {
+      userId,
+      make: make.trim(),
+      model: model.trim(),
+      year: parseInt(year),
+      color: color?.trim() || null,
+      vin: vin?.trim() || null,
+      licensePlate: licensePlate?.trim() || null,
+      notes: notes?.trim() || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    const docRef = await db.collection('vehicles').add(vehicleData);
+
+    res.json({
+      success: true,
+      data: {
+        id: docRef.id,
+        ...vehicleData
+      }
+    });
+
+  } catch (error) {
+    console.error('Error adding vehicle:', error);
+    res.status(500).json({ success: false, error: 'Failed to add vehicle' });
+  }
+});
+
+// Update vehicle
+app.put('/vehicles/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    // Extract user ID from token
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 2 || tokenParts[0] !== 'user') {
+      return res.status(401).json({ success: false, error: 'Invalid token format' });
+    }
+
+    const userId = tokenParts[1];
+    const vehicleId = req.params.id;
+    const { make, model, year, color, vin, licensePlate, notes } = req.body;
+
+    // Validation
+    if (!make || !model || !year) {
+      return res.status(400).json({ success: false, error: 'Make, model, and year are required' });
+    }
+
+    const db = admin.firestore();
+    const vehicleRef = db.collection('vehicles').doc(vehicleId);
+    const vehicleDoc = await vehicleRef.get();
+
+    if (!vehicleDoc.exists) {
+      return res.status(404).json({ success: false, error: 'Vehicle not found' });
+    }
+
+    // Check if user owns this vehicle
+    if (vehicleDoc.data().userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized to update this vehicle' });
+    }
+
+    const updateData = {
+      make: make.trim(),
+      model: model.trim(),
+      year: parseInt(year),
+      color: color?.trim() || null,
+      vin: vin?.trim() || null,
+      licensePlate: licensePlate?.trim() || null,
+      notes: notes?.trim() || null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    await vehicleRef.update(updateData);
+
+    res.json({
+      success: true,
+      data: {
+        id: vehicleId,
+        ...updateData
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating vehicle:', error);
+    res.status(500).json({ success: false, error: 'Failed to update vehicle' });
+  }
+});
+
+// Delete vehicle
+app.delete('/vehicles/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    // Extract user ID from token
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 2 || tokenParts[0] !== 'user') {
+      return res.status(401).json({ success: false, error: 'Invalid token format' });
+    }
+
+    const userId = tokenParts[1];
+    const vehicleId = req.params.id;
+
+    const db = admin.firestore();
+    const vehicleRef = db.collection('vehicles').doc(vehicleId);
+    const vehicleDoc = await vehicleRef.get();
+
+    if (!vehicleDoc.exists) {
+      return res.status(404).json({ success: false, error: 'Vehicle not found' });
+    }
+
+    // Check if user owns this vehicle
+    if (vehicleDoc.data().userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized to delete this vehicle' });
+    }
+
+    await vehicleRef.delete();
+
+    res.json({
+      success: true,
+      message: 'Vehicle deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting vehicle:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete vehicle' });
+  }
+});
+
 // Export the function
 exports.api = functions.https.onRequest(app);

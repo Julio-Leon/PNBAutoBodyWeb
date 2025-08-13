@@ -132,7 +132,7 @@ const Hero = () => {
             >
               <div className="hero-image">
                 <img 
-                  src="https://via.placeholder.com/600x400/3b82f6/FFFFFF?text=Professional+Auto+Repair" 
+                  src="https://images.unsplash.com/photo-1486754735734-325b5831c3ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=400&q=80" 
                   alt="Professional auto body repair"
                 />
                 <div className="image-overlay">

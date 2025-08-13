@@ -113,7 +113,7 @@ const Header = ({ currentView, setCurrentView }) => {
   if (user && user.role === 'customer') {
     navItems.push(
       { 
-        label: 'My Appointments', 
+        label: 'Dashboard', 
         id: 'customer-dashboard', 
         action: () => handleNavigation('customer-dashboard'),
         isCustomer: true 

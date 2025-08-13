@@ -6,8 +6,8 @@ const BeforeAfter = () => {
     {
       id: 1,
       title: "Rear End Collision Repair",
-      beforeImage: "https://via.placeholder.com/400x300/808080/FFFFFF?text=Before+Repair",
-      afterImage: "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=After+Repair",
+      beforeImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+      afterImage: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
       description: "Complete rear bumper replacement and paint matching",
       repairType: "Collision Repair",
       duration: "5 days"
@@ -15,8 +15,8 @@ const BeforeAfter = () => {
     {
       id: 2,
       title: "Door Dent Removal",
-      beforeImage: "https://via.placeholder.com/400x300/808080/FFFFFF?text=Dented+Door",
-      afterImage: "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=Perfect+Door",
+      beforeImage: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+      afterImage: "https://images.unsplash.com/photo-1544829099-b9a0c5303bea?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
       description: "Paintless dent repair with color matching",
       repairType: "Dent Repair",
       duration: "2 days"
@@ -24,8 +24,8 @@ const BeforeAfter = () => {
     {
       id: 3,
       title: "Scratch Repair & Paint",
-      beforeImage: "https://via.placeholder.com/400x300/808080/FFFFFF?text=Deep+Scratches",
-      afterImage: "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=Flawless+Paint",
+      beforeImage: "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+      afterImage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
       description: "Deep scratch repair with full panel repaint",
       repairType: "Paint & Body",
       duration: "3 days"
@@ -33,8 +33,8 @@ const BeforeAfter = () => {
     {
       id: 4,
       title: "Front Bumper Restoration",
-      beforeImage: "https://via.placeholder.com/400x300/808080/FFFFFF?text=Damaged+Bumper",
-      afterImage: "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=New+Bumper",
+      beforeImage: "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+      afterImage: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
       description: "Complete front bumper replacement and alignment",
       repairType: "Collision Repair",
       duration: "4 days"
@@ -42,8 +42,8 @@ const BeforeAfter = () => {
     {
       id: 5,
       title: "Hail Damage Repair",
-      beforeImage: "https://via.placeholder.com/400x300/808080/FFFFFF?text=Hail+Damage",
-      afterImage: "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=Like+New",
+      beforeImage: "https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+      afterImage: "https://images.unsplash.com/photo-1553440569-bcc63803a83d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
       description: "Comprehensive hail damage repair across entire vehicle",
       repairType: "Dent Repair",
       duration: "7 days"
@@ -51,8 +51,8 @@ const BeforeAfter = () => {
     {
       id: 6,
       title: "Side Panel Restoration",
-      beforeImage: "https://via.placeholder.com/400x300/808080/FFFFFF?text=Panel+Damage",
-      afterImage: "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=Perfect+Panel",
+      beforeImage: "https://images.unsplash.com/photo-1517524206127-6d22cf9a4d02?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+      afterImage: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
       description: "Side panel replacement with precision paint matching",
       repairType: "Paint & Body",
       duration: "6 days"
