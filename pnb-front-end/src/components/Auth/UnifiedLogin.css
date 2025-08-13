@@ -397,52 +397,168 @@
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .unified-login-card {
+.dark-mode .unified-login-card {
   background: rgba(30, 30, 30, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .unified-input {
+.dark-mode .unified-input {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
-[data-theme="dark"] .unified-input:focus {
+.dark-mode .unified-input:focus {
   background: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .login-type-selector {
+.dark-mode .unified-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark-mode .login-type-selector {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .type-btn:hover {
+.dark-mode .type-btn {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dark-mode .type-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.dark-mode .close-button {
   background: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .close-button {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .close-button:hover {
+.dark-mode .close-button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="dark"] .unified-login-footer {
+.dark-mode .unified-login-footer {
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
+.dark-mode .unified-login h2 {
+  color: white;
+}
+
+.dark-mode .unified-login p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dark-mode .form-group label {
+  color: white;
+}
+
+.dark-mode .password-toggle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark-mode .password-toggle:hover {
+  color: #ff6b00;
+}
+
+.dark-mode .unified-login-footer p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dark-mode .error-message {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: #f87171;
+}
+
+.dark-mode .success-message {
+  background: rgba(22, 163, 74, 0.1);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+}
+
 /* Light mode adjustments for embedded modal */
-[data-theme="light"] .error-message {
+.error-message {
   background: #fee2e2;
   border: 1px solid #fecaca;
   color: #dc2626;
 }
 
-[data-theme="light"] .success-message {
+.success-message {
   background: #dcfce7;
   border: 1px solid #bbf7d0;
   color: #16a34a;
+}
+
+/* Light theme text visibility fixes - default styles for light mode */
+.unified-login h2 {
+  color: #1f2937;
+}
+
+.unified-login p {
+  color: #6b7280;
+}
+
+.form-group label {
+  color: #374151;
+}
+
+.unified-input {
+  color: #1f2937;
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.unified-input::placeholder {
+  color: #9ca3af;
+}
+
+.unified-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #ff6b00;
+}
+
+.password-toggle {
+  color: #6b7280;
+}
+
+.password-toggle:hover {
+  color: #ff6b00;
+  background: rgba(255, 107, 0, 0.1);
+}
+
+.type-btn {
+  color: #6b7280;
+}
+
+.type-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #374151;
+}
+
+.type-btn.active {
+  background: linear-gradient(135deg, #ff6b00, #ff8f00);
+  color: white;
+}
+
+.login-type-selector {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.unified-login-footer p {
+  color: #6b7280;
+}
+
+.close-button {
+  background: rgba(0, 0, 0, 0.1);
+  color: #6b7280;
+}
+
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.2);
+  color: #374151;
 }
 
 /* Mobile responsiveness */

@@ -52,13 +52,29 @@
 }
 
 .stat-card {
-  background: var(--card-background);
+  background: #1e293b;
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
+}
+
+/* Light mode override for stat cards */
+:not(.dark-mode) .stat-card {
+  background: #1e293b; /* Keep dark background even in light mode */
+  color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure text is visible in light theme cards */
+:not(.dark-mode) .stat-number {
+  color: white;
+}
+
+:not(.dark-mode) .stat-label {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .stat-card::before {
@@ -663,8 +679,9 @@
 }
 
 [data-theme="dark"] .stat-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: #1e293b;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .modal-content {
@@ -701,9 +718,19 @@
 }
 
 /* Stats Cards Dark Mode */
-.dark-mode .stats-grid .stat-card {
-  background: rgba(255, 255, 255, 0.03);
+.dark-mode .stat-card {
+  background: #1e293b;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  color: white;
+}
+
+.dark-mode .stat-number {
+  color: white;
+}
+
+.dark-mode .stat-label {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .dark-mode .stat-card .stat-value {
