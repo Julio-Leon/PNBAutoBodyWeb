@@ -162,11 +162,11 @@
 
 /* Appointments Grid */
 .appointments-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 25px;
-  justify-content: start;
-  align-content: start;
+  align-items: flex-start;
+  width: 100%;
 }
 
 /* Appointment Cards */
@@ -177,6 +177,8 @@
   border-left: 4px solid #e1e1e1;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 500px;
 }
 
 .appointment-card.status-pending {
@@ -308,12 +310,12 @@
   }
   
   .appointments-grid {
-    grid-template-columns: 1fr;
     gap: 15px;
   }
   
   .appointment-card {
     padding: 15px;
+    max-width: 100%;
   }
   
   .appointment-meta {
