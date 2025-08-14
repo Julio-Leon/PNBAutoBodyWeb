@@ -46,6 +46,99 @@ app.get('/db-health', async (req, res) => {
   }
 });
 
+// User appointment history endpoint
+app.get('/appointments/history', async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    let userEmail = null;
+    if (token.startsWith('user-')) {
+      // Extract user ID and get user data
+      const tokenParts = token.split('-');
+      if (tokenParts.length >= 2) {
+        const userId = tokenParts[1];
+        // For now, we'll use email-based filtering
+        // In a real app, you'd look up user by ID first
+        userEmail = `user${userId}@example.com`; // This is a temporary solution
+      }
+    }
+
+    if (!userEmail) {
+      return res.status(403).json({ success: false, error: 'Invalid token' });
+    }
+
+    const snapshot = await db.collection('appointments')
+      .where('email', '==', userEmail)
+      .where('status', '==', 'completed')
+      .orderBy('updatedAt', 'desc')
+      .get();
+
+    const appointments = [];
+    snapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    res.json({
+      success: true,
+      data: appointments,
+      count: appointments.length
+    });
+  } catch (error) {
+    console.error('Error fetching user appointment history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch appointment history'
+    });
+  }
+});
+
+// Admin appointment history endpoint
+app.get('/api/appointments/admin/history', async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    // Check if user is admin
+    if (token !== 'admin-token-123') {
+      return res.status(403).json({ success: false, error: 'Admin access required' });
+    }
+
+    const snapshot = await db.collection('appointments')
+      .where('status', '==', 'completed')
+      .orderBy('updatedAt', 'desc')
+      .get();
+
+    const appointments = [];
+    snapshot.forEach(doc => {
+      appointments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    res.json({
+      success: true,
+      data: appointments,
+      count: appointments.length
+    });
+  } catch (error) {
+    console.error('Error fetching admin appointment history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch appointment history'
+    });
+  }
+});
+
+// Legacy routes for backward compatibility
 // Get appointments
 app.get('/appointments', async (req, res) => {
   try {

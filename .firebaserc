@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "pnbautobody-33725"
-  }
+    "default": "pnbautobody-33725",
+    "pwd && ls -la firebase.json": "blucid"
+  },
+  "targets": {},
+  "etags": {}
 }

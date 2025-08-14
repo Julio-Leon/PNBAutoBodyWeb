@@ -54,6 +54,14 @@ const CustomerDashboard = () => {
     }
   }, [user]);
 
+  // Update appointment history whenever appointments change
+  useEffect(() => {
+    const completedAppointments = appointments.filter(appointment => 
+      appointment.status === 'completed'
+    );
+    setAppointmentHistory(completedAppointments);
+  }, [appointments]);
+
   const fetchUserAppointments = async () => {
     setLoading(true);
     setError('');
@@ -92,42 +100,13 @@ const CustomerDashboard = () => {
     }
   };
 
-  const fetchAppointmentHistory = async () => {
-    setHistoryLoading(true);
-    setError('');
-    try {
-      const token = localStorage.getItem('userToken');
-      console.log('Fetching appointment history with token:', token);
-      
-      if (!token) {
-        setError('Please log in to view your appointment history');
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/appointments/history`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('History response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Fetched appointment history:', data);
-        setAppointmentHistory(data.data || []);
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to fetch appointment history:', errorData);
-        setError(errorData.error || 'Failed to fetch appointment history');
-      }
-    } catch (error) {
-      console.error('Error fetching appointment history:', error);
-      setError('Network error. Please check your connection.');
-    } finally {
-      setHistoryLoading(false);
-    }
+  const fetchAppointmentHistory = () => {
+    // This function is now just for compatibility - history is auto-updated via useEffect
+    const completedAppointments = appointments.filter(appointment => 
+      appointment.status === 'completed'
+    );
+    console.log('Filtered appointment history:', completedAppointments);
+    setAppointmentHistory(completedAppointments);
   };
 
   const handleEditAppointment = (appointment) => {
@@ -427,7 +406,6 @@ const CustomerDashboard = () => {
                 className={`tab-btn ${activeSection === 'history' ? 'active' : ''}`}
                 onClick={() => {
                   setActiveSection('history');
-                  fetchAppointmentHistory();
                 }}
               >
                 <History size={16} />
@@ -439,11 +417,11 @@ const CustomerDashboard = () => {
               onClick={() => {
                 if (activeSection === 'appointments') fetchUserAppointments();
                 else if (activeSection === 'vehicles') fetchUserVehicles();
-                else if (activeSection === 'history') fetchAppointmentHistory();
+                else if (activeSection === 'history') fetchUserAppointments(); // Refresh appointments to update history
               }}
-              disabled={loading || vehiclesLoading || historyLoading}
+              disabled={loading || vehiclesLoading}
             >
-              <RefreshCw size={18} className={loading || vehiclesLoading || historyLoading ? 'spin' : ''} />
+              <RefreshCw size={18} className={loading || vehiclesLoading ? 'spin' : ''} />
               Refresh
             </button>
           </div>
@@ -706,10 +684,10 @@ const CustomerDashboard = () => {
       {/* History Section */}
       {activeSection === 'history' && (
         <>
-          {historyLoading ? (
+          {loading ? (
             <div className="loading-spinner">
               <RefreshCw className="spin" size={24} />
-              <p>Loading appointment history...</p>
+              <p>Loading appointments...</p>
             </div>
           ) : (
             <motion.div 
