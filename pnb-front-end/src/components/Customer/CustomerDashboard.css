@@ -10,6 +10,14 @@
   margin: 0 auto;
 }
 
+/* Content alignment */
+.appointments-grid,
+.no-appointments,
+.loading-spinner-large {
+  margin-left: 0;
+  margin-right: auto;
+}
+
 /* Dashboard Header */
 .dashboard-header {
   background: #fff;
@@ -157,7 +165,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 25px;
-  justify-content: center;
+  justify-content: start;
+  align-content: start;
 }
 
 /* Appointment Cards */
