@@ -1,6 +1,7 @@
 .management-dashboard {
   min-height: 100vh;
-  padding: 160px 1rem 2rem;
+  margin-top: 150px;
+  padding: 2rem 1rem 2rem;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   color: #e8e9eb;
 }
@@ -1050,5 +1051,18 @@
   .management-tabs .tab-btn {
     flex: 1;
     justify-content: center;
+  }
+}
+
+/* Admin Dashboard responsive navbar spacing */
+@media (max-width: 768px) {
+  .management-dashboard {
+    margin-top: 140px; /* Slightly less for mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .management-dashboard {
+    margin-top: 120px; /* Even less for very small screens */
   }
 }
