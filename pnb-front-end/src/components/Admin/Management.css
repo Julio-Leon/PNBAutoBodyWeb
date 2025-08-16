@@ -1,14 +1,12 @@
-.management-dashboard {
+.management-container {
   min-height: 100vh;
-  margin-top: 150px;
+  margin-top: 240px; /* Increased to ensure admin title is visible */
   padding: 2rem 1rem 2rem;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   color: #e8e9eb;
-}
-
-.management-container {
   max-width: 1400px;
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .management-header {
@@ -1056,13 +1054,13 @@
 
 /* Admin Dashboard responsive navbar spacing */
 @media (max-width: 768px) {
-  .management-dashboard {
-    margin-top: 140px; /* Slightly less for mobile */
+  .management-container {
+    margin-top: 200px; /* Slightly less for tablet */
   }
 }
 
 @media (max-width: 480px) {
-  .management-dashboard {
-    margin-top: 120px; /* Even less for very small screens */
+  .management-container {
+    margin-top: 180px; /* Even less for very small screens */
   }
 }
