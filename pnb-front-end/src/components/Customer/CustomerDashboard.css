@@ -14,7 +14,7 @@
 .appointments-grid,
 .no-appointments,
 .loading-spinner-large {
-  margin-left: 0;
+  margin-left: auto;
   margin-right: auto;
 }
 
@@ -162,23 +162,26 @@
 
 /* Appointments Grid */
 .appointments-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
   width: 100%;
+  padding: 4px;
+  max-width: 1140px; /* Match the dashboard header max-width */
 }
 
 /* Appointment Cards */
 .appointment-card {
   background: #f8f9fa;
   border-radius: 12px;
-  padding: 20px;
+  padding: 24px;
   border-left: 4px solid #e1e1e1;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 500px;
+  display: flex;
+  flex-direction: column;
 }
 
 .appointment-card.status-pending {
@@ -204,8 +207,21 @@
 .appointment-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.appointment-info {
+  flex: 1;
+}
+
+.appointment-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.4;
 }
 
 .appointment-id {
@@ -215,6 +231,7 @@
   background: #e5e7eb;
   padding: 4px 8px;
   border-radius: 4px;
+  display: inline-block;
 }
 
 .status-badge {
@@ -264,6 +281,25 @@
   font-size: 14px;
   line-height: 1.6;
   margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.detail-row svg {
+  color: #667eea;
+  min-width: 16px;
+}
+
+.detail-row span {
+  word-break: break-word;
 }
 
 .appointment-meta {
@@ -1068,9 +1104,16 @@
 }
 
 /* History Section Styles */
+.history-grid {
+  margin: 0 auto; /* Center the history grid */
+  justify-content: center;
+}
+
 .history-card {
-  opacity: 0.9;
+  opacity: 0.95;
   border-left: 4px solid #22c55e;
+  background: #f0fdf4;
+  padding: 24px;
 }
 
 .history-card:hover {
@@ -1083,6 +1126,13 @@
   background: rgba(34, 197, 94, 0.1);
   color: #22c55e;
   border: 1px solid rgba(34, 197, 94, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .appointment-footer {
