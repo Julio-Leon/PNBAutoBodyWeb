@@ -53,7 +53,6 @@ const Management = () => {
 
   useEffect(() => {
     fetchAppointments();
-    fetchAppointmentHistory();
   }, []);
 
   useEffect(() => {
@@ -63,13 +62,16 @@ const Management = () => {
   useEffect(() => {
     if (appointments.length > 0) {
       calculateStats(appointments);
+      // Filter completed appointments for history
+      const completedAppointments = appointments.filter(apt => apt.status === 'completed');
+      setAppointmentHistory(completedAppointments);
     }
   }, [appointments]);
 
   const fetchAppointments = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
+      const response = await fetch(`${API_BASE_URL}/appointments`, {
         headers: {
           'Authorization': `Bearer ${user?.token}`,
           'Content-Type': 'application/json'
@@ -90,29 +92,11 @@ const Management = () => {
     }
   };
 
-  const fetchAppointmentHistory = async () => {
-    if (!user?.token) return;
-
-    setHistoryLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/appointments/admin/history`, {
-        headers: {
-          'Authorization': `Bearer ${user.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAppointmentHistory(data.data || []);
-      } else {
-        console.error('Failed to fetch appointment history');
-      }
-    } catch (error) {
-      console.error('Error fetching appointment history:', error);
-    } finally {
-      setHistoryLoading(false);
-    }
+  const fetchAppointmentHistory = () => {
+    // Use the existing appointments array and filter for completed ones
+    const completedAppointments = appointments.filter(apt => apt.status === 'completed');
+    setAppointmentHistory(completedAppointments);
+    console.log('Filtered completed appointments:', completedAppointments);
   };
 
   const calculateStats = (appointmentsData) => {
@@ -126,12 +110,15 @@ const Management = () => {
   };
 
   const filterAndSearchAppointments = () => {
-    let filtered = appointments;
+    // Start with appointments and filter out completed ones for the active appointments tab
+    let filtered = appointments.filter(apt => apt.status !== 'completed');
     
+    // Apply additional filter if not showing all
     if (filter !== 'all') {
       filtered = filtered.filter(apt => apt.status === filter);
     }
     
+    // Apply search term filter
     if (searchTerm) {
       filtered = filtered.filter(apt => 
         apt.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -172,7 +159,7 @@ const Management = () => {
 
   const confirmDelete = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/appointments/${selectedAppointment.id}`, {
+      const response = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user?.token}`,
@@ -194,7 +181,7 @@ const Management = () => {
 
   const updateAppointmentStatus = async (appointmentId, newStatus) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/appointments/${appointmentId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/appointments/${appointmentId}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user?.token}`,
@@ -307,16 +294,14 @@ const Management = () => {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
-              <option value="all">All Status</option>
+              <option value="all">All Active</option>
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
             <button
               onClick={() => {
                 fetchAppointments();
-                if (activeSection === 'history') fetchAppointmentHistory();
               }}
               className="refresh-btn"
               title="Refresh"
@@ -512,6 +497,7 @@ const Management = () => {
       </div>
 
       <div className="history-list">
+        {console.log('History rendering - Appointment history:', appointmentHistory)}
         {historyLoading ? (
           <div className="loading-state">
             <RefreshCw className="loading-spinner" />
@@ -522,6 +508,9 @@ const Management = () => {
             <History className="empty-icon" />
             <p>No completed appointments yet</p>
             <span>Completed appointments will appear here</span>
+            <button onClick={fetchAppointmentHistory} className="retry-btn">
+              <RefreshCw size={16} /> Retry Loading History
+            </button>
           </div>
         ) : (
           <div className="history-grid">
@@ -619,7 +608,10 @@ const Management = () => {
           </button>
           <button
             className={`tab-btn ${activeSection === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveSection('history')}
+            onClick={() => {
+              setActiveSection('history');
+              fetchAppointmentHistory(); // Explicitly fetch history when the tab is clicked
+            }}
           >
             <History className="tab-icon" />
             History

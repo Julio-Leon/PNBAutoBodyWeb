@@ -150,19 +150,42 @@ app.get('/appointments', async (req, res) => {
     let currentUser = null;
     
     if (token) {
-      // Determine user type and ID from token
-      if (token === 'admin-token-123') {
-        // Admin can see all appointments
-        currentUser = { role: 'admin' };
-      } else if (token.startsWith('user-')) {
-        // Regular user - extract user ID
-        const tokenParts = token.split('-');
-        if (tokenParts.length >= 2) {
-          const userId = tokenParts[1];
-          currentUser = { role: 'customer', id: userId };
+      try {
+        // First, try to verify with Firebase Auth
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        if (decodedToken) {
+          // User authenticated with Firebase Auth
+          currentUser = { 
+            role: decodedToken.role || 'customer',
+            id: decodedToken.uid,
+            email: decodedToken.email 
+          };
           
-          // Filter appointments by user ID
-          query = query.where('userId', '==', userId);
+          if (currentUser.role !== 'admin') {
+            // Regular users can only see their own appointments
+            query = query.where('userId', '==', currentUser.id);
+            // If we don't have userId field, try with email
+            if (currentUser.email) {
+              query = query.where('email', '==', currentUser.email);
+            }
+          }
+        }
+      } catch (authError) {
+        console.log('Firebase auth failed, trying legacy token:', authError.message);
+        // Legacy token handling
+        if (token === 'admin-token-123') {
+          // Admin can see all appointments
+          currentUser = { role: 'admin' };
+        } else if (token.startsWith('user-')) {
+          // Regular user - extract user ID
+          const tokenParts = token.split('-');
+          if (tokenParts.length >= 2) {
+            const userId = tokenParts[1];
+            currentUser = { role: 'customer', id: userId };
+            
+            // Filter appointments by user ID
+            query = query.where('userId', '==', userId);
+          }
         }
       }
     }

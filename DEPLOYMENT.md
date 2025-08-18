@@ -41,7 +41,7 @@ PNJAutoBody/
 
 The frontend is configured to automatically use the correct API:
 - **Development**: `http://localhost:5000/api`
-- **Production**: `https://us-central1-pnbautobody-33725.cloudfunctions.net/api/api`
+- **Production**: `https://us-central1-pnbautobody-33725.cloudfunctions.net/api`
 
 ### 📋 Deployment Steps
 

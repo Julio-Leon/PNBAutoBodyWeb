@@ -74,7 +74,8 @@ const CustomerDashboard = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/appointments`, {
+      // First, try with the user-appointments endpoint
+      const response = await fetch(`${API_BASE_URL}/appointments/my-appointments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -86,9 +87,50 @@ const CustomerDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Fetched appointments:', data);
-        setAppointments(data.data || []);
+        
+        // Handle different response formats
+        if (Array.isArray(data)) {
+          setAppointments(data);
+        } else if (data.data && Array.isArray(data.data)) {
+          setAppointments(data.data);
+        } else if (data.success && data.data && Array.isArray(data.data)) {
+          setAppointments(data.data);
+        } else {
+          console.error('Unexpected data format:', data);
+          setAppointments([]);
+        }
+      } else if (response.status === 404) {
+        // If my-appointments endpoint doesn't exist, try the legacy endpoint
+        console.log('my-appointments endpoint not found, trying legacy endpoint');
+        const legacyResponse = await fetch(`${API_BASE_URL}/appointments`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (legacyResponse.ok) {
+          const data = await legacyResponse.json();
+          console.log('Fetched appointments from legacy endpoint:', data);
+          
+          // Handle different response formats
+          if (Array.isArray(data)) {
+            setAppointments(data);
+          } else if (data.data && Array.isArray(data.data)) {
+            setAppointments(data.data);
+          } else if (data.success && data.data && Array.isArray(data.data)) {
+            setAppointments(data.data);
+          } else {
+            console.error('Unexpected data format from legacy endpoint:', data);
+            setAppointments([]);
+          }
+        } else {
+          const errorData = await legacyResponse.json().catch(() => ({}));
+          console.error('Failed to fetch appointments from legacy endpoint:', errorData);
+          setError(errorData.error || 'Failed to fetch appointments');
+        }
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         console.error('Failed to fetch appointments:', errorData);
         setError(errorData.error || 'Failed to fetch appointments');
       }
@@ -202,7 +244,8 @@ const CustomerDashboard = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/vehicles`, {
+      // Try the my-vehicles endpoint first
+      const response = await fetch(`${API_BASE_URL}/vehicles/my-vehicles`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -211,9 +254,48 @@ const CustomerDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setVehicles(data.data || []);
+        
+        // Handle different response formats
+        if (Array.isArray(data)) {
+          setVehicles(data);
+        } else if (data.data && Array.isArray(data.data)) {
+          setVehicles(data.data);
+        } else if (data.success && data.data && Array.isArray(data.data)) {
+          setVehicles(data.data);
+        } else {
+          console.error('Unexpected vehicle data format:', data);
+          setVehicles([]);
+        }
+      } else if (response.status === 404) {
+        // Fallback to legacy endpoint
+        console.log('my-vehicles endpoint not found, trying legacy endpoint');
+        const legacyResponse = await fetch(`${API_BASE_URL}/vehicles`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (legacyResponse.ok) {
+          const data = await legacyResponse.json();
+          
+          // Handle different response formats
+          if (Array.isArray(data)) {
+            setVehicles(data);
+          } else if (data.data && Array.isArray(data.data)) {
+            setVehicles(data.data);
+          } else if (data.success && data.data && Array.isArray(data.data)) {
+            setVehicles(data.data);
+          } else {
+            console.error('Unexpected vehicle data format from legacy endpoint:', data);
+            setVehicles([]);
+          }
+        } else {
+          const errorData = await legacyResponse.json().catch(() => ({}));
+          console.error('Failed to fetch vehicles from legacy endpoint:', errorData);
+        }
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         console.error('Failed to fetch vehicles:', errorData);
       }
     } catch (error) {
@@ -679,7 +761,7 @@ const CustomerDashboard = () => {
             )}
           </>
         )}
-      </div>
+      
 
       {/* History Section */}
       {activeSection === 'history' && (
@@ -707,50 +789,63 @@ const CustomerDashboard = () => {
                   {appointmentHistory.map((appointment, index) => (
                     <motion.div
                       key={appointment.id || appointment._id}
-                      className="appointment-card history-card"
+                      className="appointment-card history-card status-completed"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                     >
                       <div className="appointment-header">
-                        <div className="appointment-info">
-                          <h3>{appointment.selectedServices ? appointment.selectedServices.join(', ') : appointment.damageType}</h3>
-                          <span className="appointment-id">#{appointment.customAppointmentId}</span>
-                        </div>
-                        <div className="appointment-status completed">
-                          <CheckCircle size={16} />
-                          Completed
+                        <div className="status-indicator">
+                          <div className="status-badge completed">
+                            {getStatusIcon('completed')}
+                            <span>Completed</span>
+                          </div>
+                          {appointment.customAppointmentId && (
+                            <div className="appointment-id">
+                              #{appointment.customAppointmentId}
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      <div className="appointment-details">
-                        <div className="detail-row">
-                          <Calendar size={16} />
-                          <span>Date: {new Date(appointment.preferredDate).toLocaleDateString()}</span>
+                      <div className="appointment-info">
+                        <h3>{appointment.serviceType || appointment.damageType || 'Service Request'}</h3>
+                        <div className="appointment-details">
+                          <strong>Vehicle:</strong> {appointment.vehicleInfo || 'N/A'}<br />
+                          {appointment.description && (
+                            <>
+                              <strong>Description:</strong> {appointment.description}<br />
+                            </>
+                          )}
+                          <strong>Payment:</strong> {appointment.paymentMethod || 'N/A'}
+                          {appointment.insuranceCompany && appointment.paymentMethod === 'insurance' && (
+                            <> ({appointment.insuranceCompany})</>
+                          )}
                         </div>
-                        <div className="detail-row">
-                          <Clock size={16} />
-                          <span>Time: {appointment.preferredTime}</span>
+                      </div>
+
+                      <div className="appointment-meta">
+                        <div className="meta-item">
+                          <Calendar size={14} />
+                          <span>Date: {formatDate(appointment.preferredDate)}</span>
                         </div>
-                        <div className="detail-row">
-                          <Car size={16} />
-                          <span>Vehicle: {appointment.vehicleInfo}</span>
+                        <div className="meta-item">
+                          <Clock size={14} />
+                          <span>Time: {formatTime(appointment.preferredTime)}</span>
                         </div>
-                        <div className="detail-row">
-                          <User size={16} />
-                          <span>Name: {appointment.name}</span>
+                        <div className="meta-item">
+                          <Mail size={14} />
+                          <span>{appointment.email || 'N/A'}</span>
                         </div>
-                        {appointment.description && (
-                          <div className="detail-row">
-                            <FileText size={16} />
-                            <span>Description: {appointment.description}</span>
-                          </div>
-                        )}
+                        <div className="meta-item">
+                          <Phone size={14} />
+                          <span>{appointment.phone || 'N/A'}</span>
+                        </div>
                       </div>
 
                       <div className="appointment-footer">
-                        <small>Completed on: {new Date(appointment.updatedAt || appointment.createdAt).toLocaleDateString()}</small>
+                        <small>Completed on: {formatDate(appointment.updatedAt || appointment.completedAt || appointment.createdAt)}</small>
                       </div>
                     </motion.div>
                   ))}
@@ -760,6 +855,7 @@ const CustomerDashboard = () => {
           )}
         </>
       )}
+      </div>
 
       {/* Vehicle Modals */}
       <CustomerVehicleModal

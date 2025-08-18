@@ -1,12 +1,15 @@
 # Step-by-step Firebase Deployment Guide
 
-## Current Issue
-The Firebase Functions SDK location error suggests the functions directory needs to be properly configured for Firebase deployment.
+## Updates (August 16, 2025)
+- Fixed API endpoints in the frontend to correctly handle authentication
+- Enhanced error handling for appointment fetching
+- Improved response format handling to support different data structures
+- Added fallback endpoints to ensure backward compatibility
 
 ## Deployment Steps
 
 ### 1. Build Frontend First
-Since there were path issues with WSL, let's build the frontend:
+Build the frontend to create the distribution files:
 
 ```bash
 cd pnb-front-end
@@ -14,47 +17,67 @@ npm install  # if needed
 npm run build
 ```
 
-This should create `pnb-front-end/dist/` directory.
+This will create `pnb-front-end/dist/` directory with optimized production assets.
 
 ### 2. Deploy Hosting Only (First)
-Let's deploy just the frontend first:
+Deploy just the frontend first to ensure it builds correctly:
 
 ```bash
 firebase deploy --only hosting
 ```
 
-### 3. Fix Functions Directory
-The functions directory needs proper Firebase Functions structure:
+### 3. Update Functions Dependencies
+Ensure the functions directory has all required dependencies:
 
 ```bash
 cd functions
-npm install firebase-functions@latest firebase-admin@latest
+npm install
+# If you need to update specific packages:
+npm install firebase-functions@latest firebase-admin@latest express@latest cors@latest
 ```
 
 ### 4. Deploy Functions
-Once functions are fixed:
+Deploy the backend functions:
 
 ```bash
 firebase deploy --only functions
 ```
 
 ### 5. Deploy Everything
+If individual deployments worked, you can deploy everything at once for future updates:
+
 ```bash
 firebase deploy
 ```
 
-## Alternative: Use Cloud Run Instead
-If Firebase Functions continues to have issues, we could deploy the backend to Google Cloud Run instead:
+### 6. Verify Deployment
+After deployment, verify that your application is working by visiting:
 
-1. Build Docker container
-2. Deploy to Cloud Run
-3. Update frontend API URLs
+- Frontend: https://pnbautobody-33725.web.app
+- API: https://us-central1-pnbautobody-33725.cloudfunctions.net/api
+
+## Troubleshooting Common Issues
+
+### API Connection Issues
+- Check browser console for CORS errors
+- Verify API base URL is correct in the frontend config
+- Test API endpoints using tools like Postman or curl
+
+### Authentication Problems
+- Ensure token is being correctly sent in Authorization header
+- Check token expiration and refresh if needed
+- Verify backend is properly parsing and validating tokens
+
+### Function Deployment Errors
+If you encounter errors deploying functions:
+```bash
+firebase deploy --only functions --debug
+```
+This will provide more detailed error information.
 
 ## Current Status
 - ✅ Firebase CLI installed and logged in
 - ✅ Project connected (pnbautobody-33725)
 - ✅ Frontend configured for hosting
-- ❌ Functions need debugging (SDK location error)
-- ❌ Frontend needs to be built (WSL path issues)
-
-Try building the frontend first, then deploy hosting only.
+- ✅ Functions updated with new authentication handling
+- ✅ API endpoints updated for better error handling
