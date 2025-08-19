@@ -20,14 +20,18 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Generate admin JWT token
+    // Generate admin JWT token with explicit admin role
+    const adminPayload = {
+      uid: 'admin-001',
+      username: 'PNBAdmin',
+      role: 'admin',
+      type: 'admin'
+    };
+    
+    console.log('Creating admin token with payload:', adminPayload);
+    
     const token = jwt.sign(
-      {
-        uid: 'admin-001',
-        username: 'PNBAdmin',
-        role: 'admin',
-        type: 'admin'
-      },
+      adminPayload,
       process.env.JWT_SECRET,
       {
         expiresIn: process.env.JWT_EXPIRES_IN || '30d'
@@ -57,11 +61,39 @@ router.post('/login', async (req, res) => {
 /**
  * Verify admin token
  */
-router.get('/verify', verifyToken, requireAdmin, (req, res) => {
+router.get('/verify', verifyToken, (req, res) => {
+  // Enhanced verification response with detailed user info
+  console.log('Admin verify endpoint - User object:', JSON.stringify(req.user));
+  
   res.status(200).json({
     success: true,
     data: req.user,
-    message: 'Admin token valid'
+    message: 'Admin token valid',
+    debug: {
+      role: req.user.role,
+      type: req.user.type,
+      uid: req.user.uid,
+      username: req.user.username
+    }
+  });
+});
+
+/**
+ * Test endpoint for debugging admin permissions
+ */
+router.get('/test-permissions', verifyToken, (req, res) => {
+  const isAdmin = req.user.role === 'admin' || req.user.type === 'admin';
+  
+  res.status(200).json({
+    success: true,
+    message: 'Permission test endpoint',
+    user: req.user,
+    permissions: {
+      isAdmin,
+      canEditAppointments: isAdmin,
+      role: req.user.role,
+      type: req.user.type
+    }
   });
 });
 

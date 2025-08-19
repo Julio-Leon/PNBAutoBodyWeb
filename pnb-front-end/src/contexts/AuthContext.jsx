@@ -110,16 +110,22 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('adminToken', data.token); // Token is directly in data.token
+        console.log('Admin login response:', data);
+        
+        // Fix: The token is in data.data.token, not data.token
+        const adminToken = data.data?.token || data.token;
+        const adminUser = data.data?.user || data.data;
+        
+        localStorage.setItem('adminToken', adminToken);
         
         // Ensure admin role is set properly
-        const adminUser = data.data;
         if (adminUser && !adminUser.role) {
           adminUser.role = 'admin';
         }
         
-        setUser(adminUser); // User data is in data.data
+        setUser(adminUser);
         console.log('Admin logged in:', adminUser);
+        console.log('Admin token stored:', adminToken);
         return { success: true };
       } else {
         const errorData = await response.json();

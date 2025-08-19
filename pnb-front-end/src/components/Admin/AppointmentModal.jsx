@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -10,8 +10,11 @@ import {
   Car, 
   FileText, 
   Save,
-  Image as ImageIcon
+  Image as ImageIcon,
+  CreditCard,
+  Shield
 } from 'lucide-react';
+import './AppointmentModal.css';
 
 const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
   // Helper function to format date for input
@@ -53,28 +56,174 @@ const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
     email: appointment.email || '',
     phone: appointment.phone || '',
     serviceType: appointment.serviceType || '',
+    selectedServices: appointment.selectedServices || [],
     vehicleInfo: appointment.vehicleInfo || '',
     preferredDate: formatDateForInput(appointment.preferredDate),
     preferredTime: appointment.preferredTime || '',
+    paymentMethod: appointment.paymentMethod || 'insurance',
+    insuranceCompany: appointment.insuranceCompany || '',
     status: appointment.status || 'pending',
     message: appointment.description || appointment.message || '' // Check both fields
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+  // Service types
+  const serviceTypes = [
+    { value: 'maintenance', label: 'Maintenance' },
+    { value: 'mechanical', label: 'Mechanical Repairs' },
+    { value: 'body', label: 'Body Repairs' }
+  ];
+
+  // Service options by type
+  const serviceOptions = {
+    maintenance: [
+      'Tune-up',
+      'Tires',
+      'Oil Change',
+      'Inspections'
+    ],
+    mechanical: [
+      'Engine Problems',
+      'Transmission Issues',
+      'Brake System',
+      'Electrical Problems',
+      'Cooling System',
+      'Exhaust System',
+      'Suspension & Steering',
+      'Air Conditioning',
+      'Battery & Charging',
+      'Other Mechanical'
+    ],
+    body: [
+      'Collision Damage',
+      'Dent Repair',
+      'Scratch Repair',
+      'Paint Touch-up',
+      'Bumper Repair',
+      'Hail Damage',
+      'Other Body Damage'
+    ]
+  };
+  
+  // Insurance companies
+  const insuranceCompanies = [
+    'State Farm',
+    'Geico',
+    'Progressive',
+    'Allstate',
+    'USAA',
+    'Farmers',
+    'Liberty Mutual',
+    'Nationwide',
+    'Other'
+  ];
+  
+  // Process appointment data on component mount
+  useEffect(() => {
+    // Handle legacy data vs new data structure for service type and selected services
+    let mappedServiceType = appointment.serviceType || '';
+    let mappedSelectedServices = appointment.selectedServices || [];
+    
+    // For backward compatibility, if there's a damageType but no serviceType/selectedServices
+    // We'll map it to the body repair category
+    if (!mappedServiceType && appointment.damageType) {
+      mappedServiceType = 'body'; // Default to body repair if legacy damageType exists
+      
+      // Try to map the damage type to our new structure
+      if (!mappedSelectedServices.length && appointment.damageType) {
+        const damageTypes = appointment.damageType.split(',').map(type => type.trim());
+        mappedSelectedServices = damageTypes.map(type => {
+          // Map legacy damage types to new format
+          const mapping = {
+            'Collision Repair': 'Collision Damage',
+            'Dent Repair': 'Dent Repair',
+            'Scratch Repair': 'Scratch Repair',
+            'Paint Touch-up': 'Paint Touch-up',
+            'Bumper Repair': 'Bumper Repair',
+            'Hail Damage': 'Hail Damage',
+            'Paint Services': 'Paint Touch-up',
+            'Auto Detailing': 'Other Body Damage',
+            'Insurance Claims': 'Other Body Damage'
+          };
+          return mapping[type] || 'Other Body Damage';
+        });
+      }
+    }
+
+    // Update editData with the mapped values
     setEditData(prev => ({
       ...prev,
-      [name]: value
+      serviceType: mappedServiceType,
+      selectedServices: mappedSelectedServices
     }));
+  }, [appointment]);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Handle radio buttons and checkboxes
+    if (type === 'checkbox') {
+      // This is handled separately in the JSX for service selection
+      return;
+    } else if (type === 'radio') {
+      // For radio buttons, just use the value
+      setEditData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+      
+      // If changing from insurance to self-pay, clear insurance company
+      if (name === 'paymentMethod' && value === 'self') {
+        setEditData(prev => ({
+          ...prev,
+          insuranceCompany: ''
+        }));
+      }
+    } else {
+      // For regular inputs
+      setEditData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSave = async () => {
     setLoading(true);
+    setError('');
+    
     try {
-      await onUpdate(editData);
+      // Validate required fields
+      if (!editData.customerName || !editData.email || !editData.phone || !editData.preferredDate) {
+        throw new Error('Please fill out all required fields');
+      }
+      
+      // If service type is selected but no services are selected
+      if (editData.serviceType && (!editData.selectedServices || editData.selectedServices.length === 0)) {
+        throw new Error('Please select at least one service');
+      }
+      
+      // If payment method is insurance but no company is selected
+      if (editData.paymentMethod === 'insurance' && !editData.insuranceCompany) {
+        throw new Error('Please select an insurance company');
+      }
+      
+      // Prepare data for submission - maintain backward compatibility
+      const updatedData = {
+        ...editData
+      };
+      
+      // Add damageType field for backward compatibility
+      if (editData.selectedServices && editData.selectedServices.length > 0) {
+        updatedData.damageType = editData.selectedServices.join(', ');
+      }
+      
+      await onUpdate(updatedData);
+      onClose();
     } catch (error) {
       console.error('Error updating appointment:', error);
+      setError(error.message || 'An error occurred while updating the appointment');
     } finally {
       setLoading(false);
     }
@@ -179,29 +328,6 @@ const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
               <div className="form-group">
                 <label>
                   <Car size={16} />
-                  Service Type
-                </label>
-                {isEditing ? (
-                  <select
-                    name="serviceType"
-                    value={editData.serviceType}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select service type</option>
-                    <option value="Collision Repair">Collision Repair</option>
-                    <option value="Dent Repair">Dent Repair</option>
-                    <option value="Paint Services">Paint Services</option>
-                    <option value="Auto Detailing">Auto Detailing</option>
-                    <option value="Insurance Claims">Insurance Claims</option>
-                    <option value="Other">Other</option>
-                  </select>
-                ) : (
-                  <div className="form-display">{appointment.serviceType || 'N/A'}</div>
-                )}
-              </div>
-              <div className="form-group">
-                <label>
-                  <Car size={16} />
                   Vehicle Information
                 </label>
                 {isEditing ? (
@@ -216,6 +342,155 @@ const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
                   <div className="form-display">{appointment.vehicleInfo || 'N/A'}</div>
                 )}
               </div>
+              
+              {isEditing ? (
+                <>
+                  <div className="form-group">
+                    <label>
+                      <Car size={16} />
+                      Service Type
+                    </label>
+                    <div className="service-type-selection">
+                      {serviceTypes.map(type => (
+                        <div 
+                          key={type.value}
+                          className={`service-type-option ${editData.serviceType === type.value ? 'selected' : ''}`}
+                          onClick={() => setEditData(prev => ({
+                            ...prev,
+                            serviceType: type.value
+                          }))}
+                        >
+                          {type.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {editData.serviceType && (
+                    <div className="form-group">
+                      <label>
+                        <Car size={16} />
+                        Select Services Needed
+                      </label>
+                      <div className="service-options">
+                        {serviceOptions[editData.serviceType]?.map(service => (
+                          <div className="service-checkbox" key={service}>
+                            <input
+                              type="checkbox"
+                              id={`service-${service}`}
+                              checked={editData.selectedServices.includes(service)}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                setEditData(prev => ({
+                                  ...prev,
+                                  selectedServices: isChecked
+                                    ? [...prev.selectedServices, service]
+                                    : prev.selectedServices.filter(s => s !== service)
+                                }));
+                              }}
+                            />
+                            <label htmlFor={`service-${service}`}>{service}</label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label>
+                      <Car size={16} />
+                      Service Type
+                    </label>
+                    <div className="form-display">
+                      {serviceTypes.find(t => t.value === appointment.serviceType)?.label || appointment.serviceType || 'N/A'}
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>
+                      <Car size={16} />
+                      Selected Services
+                    </label>
+                    <div className="form-display">
+                      {appointment.selectedServices && appointment.selectedServices.length > 0
+                        ? appointment.selectedServices.join(', ')
+                        : appointment.damageType || 'N/A'}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              <div className="form-group">
+                <label>
+                  <CreditCard size={16} />
+                  Payment Method
+                </label>
+                {isEditing ? (
+                  <div className="payment-options">
+                    <div className="payment-option">
+                      <input
+                        type="radio"
+                        id="payment-insurance"
+                        name="paymentMethod"
+                        value="insurance"
+                        checked={editData.paymentMethod === 'insurance'}
+                        onChange={handleInputChange}
+                      />
+                      <label htmlFor="payment-insurance">Insurance</label>
+                    </div>
+                    <div className="payment-option">
+                      <input
+                        type="radio"
+                        id="payment-self"
+                        name="paymentMethod"
+                        value="self"
+                        checked={editData.paymentMethod === 'self'}
+                        onChange={handleInputChange}
+                      />
+                      <label htmlFor="payment-self">Self-Pay</label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="form-display">
+                    {appointment.paymentMethod === 'insurance' ? 'Insurance' : 
+                     appointment.paymentMethod === 'self' ? 'Self-Pay' : 
+                     appointment.paymentMethod || 'N/A'}
+                  </div>
+                )}
+              </div>
+              
+              {(isEditing && editData.paymentMethod === 'insurance') && (
+                <div className="form-group">
+                  <label>
+                    <Shield size={16} />
+                    Insurance Company
+                  </label>
+                  <select
+                    name="insuranceCompany"
+                    value={editData.insuranceCompany}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Select insurance company</option>
+                    {insuranceCompanies.map(company => (
+                      <option key={company} value={company}>{company}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {(!isEditing && appointment.paymentMethod === 'insurance' && appointment.insuranceCompany) && (
+                <div className="form-group">
+                  <label>
+                    <Shield size={16} />
+                    Insurance Company
+                  </label>
+                  <div className="form-display">
+                    {appointment.insuranceCompany}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-section">
@@ -337,21 +612,24 @@ const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
 
         {isEditing && (
           <div className="modal-footer">
-            <button
-              className="btn-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              className="btn-primary"
-              onClick={handleSave}
-              disabled={loading}
-            >
-              <Save size={16} />
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
+            {error && <div className="error-message">{error}</div>}
+            <div className="button-group">
+              <button
+                className="btn-secondary"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-primary"
+                onClick={handleSave}
+                disabled={loading}
+              >
+                <Save size={16} />
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         )}
       </motion.div>

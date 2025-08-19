@@ -32,6 +32,24 @@ router.post(
 // Protected routes - require authentication
 router.use(verifyToken);
 
+// DEBUG: Test admin permissions on appointments
+router.get('/debug-admin-test', (req, res) => {
+  const isAdmin = req.user.role === 'admin' || req.user.type === 'admin';
+  
+  res.status(200).json({
+    success: true,
+    message: 'Admin permission test for appointments',
+    user: req.user,
+    permissions: {
+      isAdmin,
+      canEditAnyAppointment: isAdmin,
+      role: req.user.role,
+      type: req.user.type,
+      uid: req.user.uid
+    }
+  });
+});
+
 // Get user's own appointments
 router.get('/my-appointments', getUserAppointments);
 

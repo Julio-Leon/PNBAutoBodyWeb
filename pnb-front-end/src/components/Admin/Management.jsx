@@ -51,6 +51,47 @@ const Management = () => {
 
   const { user } = useContext(AuthContext);
 
+  // DEBUG: Test admin permissions
+  const testAdminPermissions = async () => {
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      console.log('Testing admin permissions with token:', adminToken ? 'Present' : 'Missing');
+      
+      if (!adminToken) {
+        alert('No admin token found. Please log in again.');
+        return;
+      }
+      
+      // Test admin verify endpoint
+      const verifyResponse = await fetch(`${API_BASE_URL}/admin/verify`, {
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const verifyData = await verifyResponse.json();
+      console.log('Admin verify response:', verifyData);
+      
+      // Test appointment permissions endpoint
+      const testResponse = await fetch(`${API_BASE_URL}/appointments/debug-admin-test`, {
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const testData = await testResponse.json();
+      console.log('Appointment permission test response:', testData);
+      
+      alert('Check console for debug info. Admin verified: ' + (verifyData.success ? 'YES' : 'NO'));
+      
+    } catch (error) {
+      console.error('Debug test error:', error);
+      alert('Debug test failed: ' + error.message);
+    }
+  };
+
   useEffect(() => {
     fetchAppointments();
   }, []);
@@ -182,7 +223,21 @@ const Management = () => {
 
   const handleUpdateAppointment = async (updatedData) => {
     try {
-      const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+      // ALWAYS prioritize the admin token in the Management dashboard
+      const adminToken = localStorage.getItem('adminToken');
+      // Only use userToken as fallback if no admin token exists
+      const userToken = localStorage.getItem('userToken');
+      const token = adminToken || userToken;
+      
+      console.log('Using token for update:', adminToken ? 'Admin token' : userToken ? 'User token' : 'No token');
+      
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      // Add logging to help debug token issues
+      console.log('Token prefix:', token.substring(0, 10) + '...');
+      
       const response = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
         method: 'PUT',
         headers: {
@@ -210,11 +265,81 @@ const Management = () => {
       } else {
         const errorData = await response.json();
         console.error('Failed to update appointment:', errorData);
-        throw new Error(errorData.error || 'Failed to update appointment');
+        
+        // Check if it's a permissions error
+        if (errorData.error === 'You can only edit your own appointments') {
+          console.error('Permission error detected. User role may not be properly set.');
+          
+          // Try to refresh the auth token and try again with admin token
+          await refreshAndRetryUpdate(updatedData);
+        } else {
+          throw new Error(errorData.error || 'Failed to update appointment');
+        }
       }
     } catch (error) {
       console.error('Error updating appointment:', error);
+      alert(`Error updating appointment: ${error.message}`);
       throw error; // Re-throw so the modal can handle it
+    }
+  };
+
+  // Helper function to refresh auth token and retry update
+  const refreshAndRetryUpdate = async (updatedData) => {
+    try {
+      // Force using just the admin token (not user token)
+      const adminToken = localStorage.getItem('adminToken');
+      
+      if (!adminToken) {
+        throw new Error('No admin token available. Please try logging in again.');
+      }
+      
+      console.log('Retrying with admin token only');
+      
+      const response = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedData)
+      });
+      
+      if (!adminToken) {
+        throw new Error('No admin token available. Please try logging in again.');
+      }
+      
+      console.log('Retrying with admin token only');
+      
+      const retryResponse = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (retryResponse.ok) {
+        const responseData = await retryResponse.json();
+        console.log('Update retry successful:', responseData);
+        
+        // Refresh appointments
+        fetchAppointments();
+        if (activeSection === 'history') {
+          fetchAppointmentHistory();
+        }
+        
+        // Close the modal
+        setShowModal(false);
+        setSelectedAppointment(null);
+      } else {
+        const errorData = await retryResponse.json();
+        console.error('Retry failed:', errorData);
+        throw new Error(errorData.error || 'Failed to update appointment on retry');
+      }
+    } catch (error) {
+      console.error('Error in retry update:', error);
+      alert(`Failed to update appointment. Error: ${error.message}`);
     }
   };
 
@@ -784,6 +909,21 @@ const Management = () => {
               <p>Manage appointments and view system analytics</p>
             </div>
           </div>
+          <button 
+            onClick={testAdminPermissions}
+            style={{ 
+              backgroundColor: '#ff6b35', 
+              color: 'white', 
+              padding: '8px 12px', 
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              height: 'fit-content'
+            }}
+          >
+            🔧 Debug Auth
+          </button>
         </div>
 
         <div className="section-tabs">

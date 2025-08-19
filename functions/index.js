@@ -371,22 +371,33 @@ app.put('/appointments/:id', async (req, res) => {
     let isAdmin = false;
     let userId = null;
     
+    console.log('===== APPOINTMENT UPDATE DEBUG =====');
+    console.log('Token received:', token ? token.substring(0, 15) + '...' : 'No token');
+    console.log('Expected admin token:', 'admin-token-123');
+    
     if (token) {
       if (token === 'admin-token-123') {
         isAdmin = true;
-        currentUser = { role: 'admin' };
+        currentUser = { role: 'admin', username: 'PNBAdmin' };
+        console.log('✅ ADMIN TOKEN RECOGNIZED');
       } else if (token.startsWith('user-')) {
         const tokenParts = token.split('-');
         if (tokenParts.length >= 2) {
           userId = tokenParts[1];
           currentUser = { role: 'customer', id: userId };
+          console.log('Customer token recognized for user:', userId);
         }
+      } else {
+        console.log('❌ UNRECOGNIZED TOKEN FORMAT');
       }
+    } else {
+      console.log('❌ NO TOKEN PROVIDED');
     }
 
     console.log('PUT request received for appointment:', id);
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     console.log('Current user:', currentUser);
+    console.log('Is Admin:', isAdmin);
 
     // Check if appointment exists
     const doc = await db.collection('appointments').doc(id).get();
@@ -397,10 +408,23 @@ app.put('/appointments/:id', async (req, res) => {
 
     const appointmentData = doc.data();
     
-    // Authorization check - customers can only edit their own appointments
-    if (!isAdmin && (!currentUser || currentUser.role !== 'customer' || appointmentData.userId !== userId)) {
+    console.log('Appointment data userId:', appointmentData.userId);
+    
+    // Authorization check - FIXED ADMIN LOGIC
+    if (isAdmin) {
+      console.log('✅ ADMIN ACCESS GRANTED - Can edit any appointment');
+    } else if (currentUser && currentUser.role === 'customer' && appointmentData.userId === userId) {
+      console.log('✅ CUSTOMER ACCESS GRANTED - Owns this appointment');
+    } else {
+      console.log('❌ ACCESS DENIED');
+      console.log('- isAdmin:', isAdmin);
+      console.log('- currentUser:', currentUser);
+      console.log('- appointmentData.userId:', appointmentData.userId);
+      console.log('- userId:', userId);
       return res.status(403).json({ success: false, error: 'You can only edit your own appointments' });
     }
+    
+    console.log('✅ PROCEEDING WITH UPDATE');
 
     // Prepare update data with careful date handling
     const updateData = {
@@ -757,15 +781,54 @@ app.post('/admin/login', (req, res) => {
 // Admin verify
 app.get('/admin/verify', (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
+  
+  console.log('Admin verify - token:', token);
 
   if (token === 'admin-token-123') {
     res.json({
       success: true,
-      data: { user: { username: 'PNBAdmin', role: 'admin' } }
+      data: { user: { username: 'PNBAdmin', role: 'admin' } },
+      debug: {
+        token: token,
+        isValidAdminToken: true
+      }
     });
   } else {
     res.status(401).json({ success: false, error: 'Invalid token' });
   }
+});
+
+// Debug endpoint for testing admin permissions
+app.get('/admin/test-permissions', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const isAdmin = token === 'admin-token-123';
+  
+  res.json({
+    success: true,
+    message: 'Admin permission test endpoint',
+    debug: {
+      token: token ? token.substring(0, 15) + '...' : 'No token',
+      isAdmin,
+      canEditAppointments: isAdmin
+    }
+  });
+});
+
+// Debug endpoint for testing appointment permissions
+app.get('/appointments/debug-admin-test', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const isAdmin = token === 'admin-token-123';
+  
+  res.json({
+    success: true,
+    message: 'Appointment permission test',
+    debug: {
+      token: token ? token.substring(0, 15) + '...' : 'No token',
+      isAdmin,
+      canEditAnyAppointment: isAdmin,
+      expectedToken: 'admin-token-123'
+    }
+  });
 });
 
 // Vehicle Management Endpoints

@@ -1,0 +1,273 @@
+/* Appointment Modal Styling */
+.appointment-modal {
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.appointment-modal h2,
+.appointment-modal h3 {
+  color: #f0f0f0;
+}
+
+.appointment-modal .form-section {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 20px;
+}
+
+.appointment-modal .form-section:last-child {
+  border-bottom: none;
+}
+
+.appointment-modal .form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.appointment-modal .form-row .form-group {
+  flex: 1;
+}
+
+.appointment-modal .form-group {
+  margin-bottom: 16px;
+}
+
+.appointment-modal label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #aaa;
+}
+
+.appointment-modal input,
+.appointment-modal select,
+.appointment-modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #222;
+  color: #f0f0f0;
+  font-size: 14px;
+}
+
+.appointment-modal input:focus,
+.appointment-modal select:focus,
+.appointment-modal textarea:focus {
+  outline: none;
+  border-color: #0ea5e9;
+}
+
+.appointment-modal .form-display {
+  padding: 10px;
+  background-color: #333;
+  border-radius: 6px;
+  min-height: 40px;
+}
+
+.appointment-modal .message-display {
+  white-space: pre-wrap;
+  min-height: 80px;
+}
+
+.appointment-modal .photo-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.appointment-modal .photo-item {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.appointment-modal .photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.appointment-modal .appointment-metadata {
+  font-size: 12px;
+  color: #888;
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px dashed #444;
+}
+
+.appointment-modal .status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.appointment-modal .status-badge.pending {
+  background-color: #713f12;
+  color: #fde68a;
+}
+
+.appointment-modal .status-badge.confirmed {
+  background-color: #065f46;
+  color: #a7f3d0;
+}
+
+.appointment-modal .status-badge.completed {
+  background-color: #1e40af;
+  color: #bfdbfe;
+}
+
+.appointment-modal .status-badge.cancelled {
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
+.appointment-modal .modal-footer {
+  display: flex;
+  flex-direction: column;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.appointment-modal .button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.appointment-modal .error-message {
+  color: #f87171;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: rgba(239, 68, 68, 0.2);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.appointment-modal .btn-primary,
+.appointment-modal .btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.appointment-modal .btn-primary {
+  background-color: #0ea5e9;
+  color: white;
+}
+
+.appointment-modal .btn-primary:hover {
+  background-color: #0284c7;
+}
+
+.appointment-modal .btn-secondary {
+  background-color: #334155;
+  color: #f0f0f0;
+}
+
+.appointment-modal .btn-secondary:hover {
+  background-color: #475569;
+}
+
+.appointment-modal .btn-primary:disabled,
+.appointment-modal .btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Service type selection styling */
+.service-type-selection {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.service-type-option {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #222;
+}
+
+.service-type-option:hover {
+  background-color: #333;
+}
+
+.service-type-option.selected {
+  background-color: #0ea5e9;
+  color: white;
+  border-color: #0ea5e9;
+}
+
+/* Service options styling */
+.service-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.service-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.service-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0ea5e9;
+}
+
+.service-checkbox label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+/* Payment method styling */
+.payment-options {
+  display: flex;
+  gap: 20px;
+  margin-top: 5px;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payment-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0ea5e9;
+}
+
+.payment-option label {
+  margin-bottom: 0;
+  cursor: pointer;
+}

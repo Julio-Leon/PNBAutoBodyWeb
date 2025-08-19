@@ -11,8 +11,11 @@ import {
   FileText, 
   Save,
   CreditCard,
-  Shield
+  Shield,
+  Upload,
+  Camera
 } from 'lucide-react';
+import './CustomerAppointmentModal.css';
 
 const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -21,6 +24,7 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
     phone: '',
     vehicleInfo: '',
     serviceType: '',
+    selectedServices: [],
     description: '',
     preferredDate: '',
     preferredTime: '',
@@ -31,15 +35,43 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const damageTypes = [
-    'Collision Repair',
-    'Dent Repair',
-    'Scratch Repair',
-    'Paint Touch-up',
-    'Bumper Repair',
-    'Hail Damage',
-    'Other'
+  // Service types that match the main appointment form
+  const serviceTypes = [
+    { value: 'maintenance', label: 'Maintenance' },
+    { value: 'mechanical', label: 'Mechanical Repairs' },
+    { value: 'body', label: 'Body Repairs' }
   ];
+
+  // Service options by type
+  const serviceOptions = {
+    maintenance: [
+      'Tune-up',
+      'Tires',
+      'Oil Change',
+      'Inspections'
+    ],
+    mechanical: [
+      'Engine Problems',
+      'Transmission Issues',
+      'Brake System',
+      'Electrical Problems',
+      'Cooling System',
+      'Exhaust System',
+      'Suspension & Steering',
+      'Air Conditioning',
+      'Battery & Charging',
+      'Other Mechanical'
+    ],
+    body: [
+      'Collision Damage',
+      'Dent Repair',
+      'Scratch Repair',
+      'Paint Touch-up',
+      'Bumper Repair',
+      'Hail Damage',
+      'Other Body Damage'
+    ]
+  };
 
   const insuranceCompanies = [
     'State Farm',
@@ -75,12 +107,43 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
         return date.toISOString().split('T')[0];
       };
 
+      // Handle legacy data vs new data structure
+      const serviceType = appointment.serviceType || '';
+      const selectedServices = appointment.selectedServices || [];
+      
+      // For backward compatibility, if there's a damageType but no serviceType/selectedServices
+      // We'll map it to the body repair category
+      let mappedServiceType = serviceType;
+      let mappedSelectedServices = [...selectedServices];
+      
+      if (!serviceType && appointment.damageType) {
+        mappedServiceType = 'body'; // Default to body repair if legacy damageType exists
+        
+        // Try to map the damage type to our new structure
+        if (!selectedServices.length && appointment.damageType) {
+          const damageTypes = appointment.damageType.split(',').map(type => type.trim());
+          mappedSelectedServices = damageTypes.map(type => {
+            // Map legacy damage types to new format
+            const mapping = {
+              'Collision Repair': 'Collision Damage',
+              'Dent Repair': 'Dent Repair',
+              'Scratch Repair': 'Scratch Repair',
+              'Paint Touch-up': 'Paint Touch-up',
+              'Bumper Repair': 'Bumper Repair',
+              'Hail Damage': 'Hail Damage'
+            };
+            return mapping[type] || 'Other Body Damage';
+          });
+        }
+      }
+
       setFormData({
         customerName: appointment.customerName || '',
         email: appointment.email || '',
         phone: appointment.phone || '',
         vehicleInfo: appointment.vehicleInfo || '',
-        serviceType: appointment.serviceType || appointment.damageType || '',
+        serviceType: mappedServiceType,
+        selectedServices: mappedSelectedServices,
         description: appointment.description || '',
         preferredDate: formatDateForInput(appointment.preferredDate),
         preferredTime: appointment.preferredTime || '',
@@ -92,10 +155,42 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Handle service type change - reset selected services when service type changes
+    if (name === 'serviceType') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        selectedServices: []
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  
+  const handleServiceSelection = (service) => {
+    setFormData(prev => {
+      const currentServices = prev.selectedServices || [];
+      const isSelected = currentServices.includes(service);
+      
+      if (isSelected) {
+        // Remove service if already selected
+        return {
+          ...prev,
+          selectedServices: currentServices.filter(s => s !== service)
+        };
+      } else {
+        // Add service if not selected
+        return {
+          ...prev,
+          selectedServices: [...currentServices, service]
+        };
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -104,7 +199,27 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
     setError('');
 
     try {
-      const result = await onSave(appointment.id, formData);
+      // Form validation
+      if (!formData.serviceType) {
+        setError('Please select a service type.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!formData.selectedServices || formData.selectedServices.length === 0) {
+        setError('Please select at least one service.');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Create appointment data with new structure
+      const appointmentData = {
+        ...formData,
+        // For backward compatibility
+        damageType: formData.selectedServices.join(', ')
+      };
+      
+      const result = await onSave(appointment.id, appointmentData);
       if (result.success) {
         onClose();
       } else {
@@ -214,7 +329,7 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="serviceType">Service Type *</label>
+                  <label htmlFor="serviceType">Type of Service *</label>
                   <select
                     id="serviceType"
                     name="serviceType"
@@ -222,22 +337,56 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="">Select Service Type</option>
-                    {damageTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                    <option value="">Select service type</option>
+                    {serviceTypes.map((type) => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
+              
+              {formData.serviceType && (
+                <div className="form-group full-width">
+                  <label>Services Needed * (Select all that apply)</label>
+                  <div className="service-options">
+                    {serviceOptions[formData.serviceType]?.map((service) => (
+                      <label 
+                        key={service} 
+                        className={`service-option ${formData.selectedServices.includes(service) ? 'selected' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.selectedServices.includes(service)}
+                          onChange={() => handleServiceSelection(service)}
+                        />
+                        <span className="checkmark"></span>
+                        {service}
+                      </label>
+                    ))}
+                  </div>
+                  {formData.selectedServices.length === 0 && (
+                    <small className="service-hint">Please select at least one service</small>
+                  )}
+                </div>
+              )}
+              
+              <div className="form-group full-width">
+                <label htmlFor="description">
+                  {formData.serviceType === 'maintenance' ? 'Additional Details' : 
+                   formData.serviceType === 'mechanical' ? 'Problem Description' : 
+                   'Damage Description'}
+                </label>
                 <textarea
                   id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="Please describe the damage or service needed"
                   rows="3"
+                  placeholder={
+                    formData.serviceType === 'maintenance' ? 'Any specific maintenance needs or concerns...' : 
+                    formData.serviceType === 'mechanical' ? 'Please describe the mechanical problem in detail...' : 
+                    'Please describe the damage in detail...'
+                  }
                 />
               </div>
             </div>
@@ -258,12 +407,13 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="preferredTime">Preferred Time</label>
+                  <label htmlFor="preferredTime">Preferred Time *</label>
                   <select
                     id="preferredTime"
                     name="preferredTime"
                     value={formData.preferredTime}
                     onChange={handleInputChange}
+                    required
                   >
                     <option value="">Select Time</option>
                     <option value="8:00 AM">8:00 AM</option>
@@ -282,38 +432,52 @@ const CustomerAppointmentModal = ({ appointment, isOpen, onClose, onSave }) => {
             </div>
 
             <div className="form-section">
-              <h3><CreditCard size={20} /> Payment Information</h3>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="paymentMethod">Payment Method *</label>
-                  <select
-                    id="paymentMethod"
+              <h3><CreditCard size={20} /> Payment Method</h3>
+              <div className="payment-options">
+                <label className="payment-option">
+                  <input
+                    type="radio"
                     name="paymentMethod"
-                    value={formData.paymentMethod}
+                    value="insurance"
+                    checked={formData.paymentMethod === 'insurance'}
                     onChange={handleInputChange}
-                    required
+                  />
+                  <div className="option-content">
+                    <Shield size={20} />
+                    <span>Insurance Claim</span>
+                  </div>
+                </label>
+                <label className="payment-option">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="outofpocket"
+                    checked={formData.paymentMethod === 'outofpocket'}
+                    onChange={handleInputChange}
+                  />
+                  <div className="option-content">
+                    <CreditCard size={20} />
+                    <span>Out of Pocket</span>
+                  </div>
+                </label>
+              </div>
+
+              {formData.paymentMethod === 'insurance' && (
+                <div className="form-group">
+                  <label htmlFor="insuranceCompany">Insurance Company</label>
+                  <select
+                    id="insuranceCompany"
+                    name="insuranceCompany"
+                    value={formData.insuranceCompany}
+                    onChange={handleInputChange}
                   >
-                    <option value="insurance">Insurance</option>
-                    <option value="personal">Personal Payment</option>
+                    <option value="">Select your insurance company</option>
+                    {insuranceCompanies.map((company) => (
+                      <option key={company} value={company}>{company}</option>
+                    ))}
                   </select>
                 </div>
-                {formData.paymentMethod === 'insurance' && (
-                  <div className="form-group">
-                    <label htmlFor="insuranceCompany">Insurance Company</label>
-                    <select
-                      id="insuranceCompany"
-                      name="insuranceCompany"
-                      value={formData.insuranceCompany}
-                      onChange={handleInputChange}
-                    >
-                      <option value="">Select Insurance Company</option>
-                      {insuranceCompanies.map(company => (
-                        <option key={company} value={company}>{company}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
             <div className="modal-actions">

@@ -20,12 +20,25 @@ const verifyToken = async (req, res, next) => {
       token = token.slice(7);
     }
 
+    // For debugging
+    console.log('Auth middleware processing token:', token.substring(0, 20) + '...');
+
     try {
       // Verify JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // IMPORTANT: Ensure role is explicitly set for admin tokens
+      if (decoded.type === 'admin' || decoded.username === 'PNBAdmin') {
+        decoded.role = 'admin';
+      }
+      
+      // Log for debugging
+      console.log('JWT token verified with payload:', JSON.stringify(decoded));
       req.user = decoded;
       next();
     } catch (jwtError) {
+      console.log('JWT verification failed, trying Firebase token:', jwtError.message);
+      
       // If JWT fails, try Firebase token
       try {
         const decodedToken = await getAuth().verifyIdToken(token);
@@ -34,8 +47,17 @@ const verifyToken = async (req, res, next) => {
           email: decodedToken.email,
           role: decodedToken.role || 'customer'
         };
+        
+        // Special case: check if this is an admin email
+        if (decodedToken.email === 'admin@pnbautobody.com') {
+          req.user.role = 'admin';
+        }
+        
+        // Log for debugging
+        console.log('Firebase token verified with role:', req.user.role);
         next();
       } catch (firebaseError) {
+        console.error('Token verification failed:', jwtError.message, firebaseError.message);
         return res.status(401).json({
           success: false,
           error: 'Invalid token.'
