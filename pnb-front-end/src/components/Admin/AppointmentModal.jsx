@@ -219,6 +219,10 @@ const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
         updatedData.damageType = editData.selectedServices.join(', ');
       }
       
+      console.log('AppointmentModal - Sending update data:', JSON.stringify(updatedData, null, 2));
+      console.log('Selected services:', editData.selectedServices);
+      console.log('Service type:', editData.serviceType);
+      
       await onUpdate(updatedData);
       onClose();
     } catch (error) {

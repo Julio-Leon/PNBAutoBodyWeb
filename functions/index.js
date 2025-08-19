@@ -261,12 +261,14 @@ app.post('/appointments', async (req, res) => {
     }
     
     const appointmentData = {
-      customerName: req.body.name || 'N/A',
+      customerName: req.body.name || req.body.customerName || 'N/A',
       email: req.body.email || 'N/A',
       phone: req.body.phone || 'N/A',
       vehicleInfo: req.body.vehicleInfo || 'N/A',
-      serviceType: req.body.damageType || 'N/A',
-      description: req.body.description || null,
+      serviceType: req.body.serviceType || req.body.damageType || 'N/A',
+      selectedServices: req.body.selectedServices || [], // NEW: Handle selected services array
+      damageType: req.body.damageType || (req.body.selectedServices ? req.body.selectedServices.join(', ') : null), // Backward compatibility
+      description: req.body.description || req.body.message || null,
       preferredDate: null,
       preferredTime: req.body.preferredTime || null,
       paymentMethod: req.body.paymentMethod || 'N/A',
@@ -433,12 +435,20 @@ app.put('/appointments/:id', async (req, res) => {
       phone: req.body.phone || appointmentData.phone || 'N/A',
       vehicleInfo: req.body.vehicleInfo || appointmentData.vehicleInfo || 'N/A',
       serviceType: req.body.serviceType || req.body.damageType || appointmentData.serviceType || 'N/A',
+      selectedServices: req.body.selectedServices || appointmentData.selectedServices || [], // NEW: Handle selected services array
       preferredTime: req.body.preferredTime || appointmentData.preferredTime || null,
       description: req.body.message || req.body.description || appointmentData.description || null,
       paymentMethod: req.body.paymentMethod || appointmentData.paymentMethod || 'N/A',
       insuranceCompany: req.body.insuranceCompany || appointmentData.insuranceCompany || null,
       updatedAt: new Date()
     };
+    
+    // For backward compatibility, also update the damageType field if selectedServices is provided
+    if (req.body.selectedServices && Array.isArray(req.body.selectedServices) && req.body.selectedServices.length > 0) {
+      updateData.damageType = req.body.selectedServices.join(', ');
+    }
+    
+    console.log('Update data being saved:', JSON.stringify(updateData, null, 2));
     
     // Only admins can change status
     if (isAdmin && req.body.status) {
