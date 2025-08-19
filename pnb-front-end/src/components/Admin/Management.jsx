@@ -71,22 +71,38 @@ const Management = () => {
   const fetchAppointments = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+      console.log('Fetching appointments with token:', token ? 'Token present' : 'No token');
+      
       const response = await fetch(`${API_BASE_URL}/appointments`, {
         headers: {
-          'Authorization': `Bearer ${user?.token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
+      console.log('Fetch appointments response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
         const appointmentsData = data.data || [];
+        console.log('Fetched appointments:', appointmentsData);
+        
+        // Debug: Log the first appointment to see its structure
+        if (appointmentsData.length > 0) {
+          console.log('Sample appointment structure:', appointmentsData[0]);
+          console.log('Available fields:', Object.keys(appointmentsData[0]));
+        }
+        
         setAppointments(appointmentsData);
       } else {
-        console.error('Failed to fetch appointments');
+        const errorData = await response.json();
+        console.error('Failed to fetch appointments:', errorData);
+        alert(`Failed to fetch appointments: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      alert('Error fetching appointments. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -95,8 +111,15 @@ const Management = () => {
   const fetchAppointmentHistory = () => {
     // Use the existing appointments array and filter for completed ones
     const completedAppointments = appointments.filter(apt => apt.status === 'completed');
-    setAppointmentHistory(completedAppointments);
     console.log('Filtered completed appointments:', completedAppointments);
+    
+    // Debug: Log the first appointment to see its structure
+    if (completedAppointments.length > 0) {
+      console.log('Sample completed appointment structure:', completedAppointments[0]);
+      console.log('Available fields:', Object.keys(completedAppointments[0]));
+    }
+    
+    setAppointmentHistory(completedAppointments);
   };
 
   const calculateStats = (appointmentsData) => {
@@ -157,54 +180,119 @@ const Management = () => {
     setShowDeleteModal(true);
   };
 
+  const handleUpdateAppointment = async (updatedData) => {
+    try {
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+      const response = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Update response:', responseData);
+        
+        // Refresh appointments to get the latest data
+        fetchAppointments();
+        if (activeSection === 'history') {
+          fetchAppointmentHistory();
+        }
+        
+        // Close the modal
+        setShowModal(false);
+        setSelectedAppointment(null);
+        
+        console.log(`Appointment ${selectedAppointment.id} updated successfully`);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to update appointment:', errorData);
+        throw new Error(errorData.error || 'Failed to update appointment');
+      }
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      throw error; // Re-throw so the modal can handle it
+    }
+  };
+
   const confirmDelete = async () => {
     try {
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
       const response = await fetch(`${API_BASE_URL}/appointments/${selectedAppointment.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${user?.token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('Delete response:', responseData);
+        
+        // Remove from local state
         setAppointments(prev => prev.filter(apt => apt.id !== selectedAppointment.id));
         setShowDeleteModal(false);
         setSelectedAppointment(null);
+        
+        console.log(`Appointment ${selectedAppointment.id} deleted successfully`);
       } else {
-        console.error('Failed to delete appointment');
+        const errorData = await response.json();
+        console.error('Failed to delete appointment:', errorData);
+        alert(`Failed to delete appointment: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error deleting appointment:', error);
+      alert('Error deleting appointment. Please try again.');
     }
   };
 
   const updateAppointmentStatus = async (appointmentId, newStatus) => {
     try {
+      console.log(`Updating appointment ${appointmentId} status to ${newStatus}`);
+      
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+      console.log('Token present:', token ? 'Yes' : 'No');
+      
       const response = await fetch(`${API_BASE_URL}/appointments/${appointmentId}/status`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${user?.token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ status: newStatus })
       });
 
+      console.log('Status update response status:', response.status);
+
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('Status update response:', responseData);
+        
+        // Update the local state
         setAppointments(prev => 
           prev.map(apt => 
             apt.id === appointmentId ? { ...apt, status: newStatus } : apt
           )
         );
         
-        if (newStatus === 'completed') {
+        // Refresh history if status changes to/from completed
+        if (newStatus === 'completed' || appointments.find(apt => apt.id === appointmentId)?.status === 'completed') {
           fetchAppointmentHistory();
         }
+        
+        console.log(`Appointment ${appointmentId} status updated to ${newStatus}`);
       } else {
-        console.error('Failed to update appointment status');
+        const errorData = await response.json();
+        console.error('Failed to update appointment status:', errorData);
+        alert(`Failed to update appointment status: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating appointment status:', error);
+      alert('Error updating appointment status. Please try again.');
     }
   };
 
@@ -214,15 +302,33 @@ const Management = () => {
     try {
       let date;
       
-      if (dateValue.seconds) {
+      // Handle Firestore Timestamp objects
+      if (dateValue && typeof dateValue === 'object' && dateValue.seconds) {
         date = new Date(dateValue.seconds * 1000);
-      } else if (typeof dateValue === 'string') {
+      } 
+      // Handle Firestore Timestamp objects with toDate method
+      else if (dateValue && typeof dateValue === 'object' && dateValue.toDate) {
+        date = dateValue.toDate();
+      }
+      // Handle JavaScript Date objects
+      else if (dateValue instanceof Date) {
+        date = dateValue;
+      }
+      // Handle date strings
+      else if (typeof dateValue === 'string') {
         date = new Date(dateValue);
-      } else {
+      }
+      // Handle timestamp numbers
+      else if (typeof dateValue === 'number') {
+        date = new Date(dateValue);
+      }
+      else {
+        console.warn('Unrecognized date format:', dateValue);
         return 'Invalid date';
       }
       
-      if (isNaN(date.getTime())) {
+      if (!date || isNaN(date.getTime())) {
+        console.warn('Invalid date created from:', dateValue);
         return 'Invalid date';
       }
       
@@ -232,7 +338,7 @@ const Management = () => {
         day: 'numeric'
       });
     } catch (error) {
-      console.error('Error formatting date:', error);
+      console.error('Error formatting date:', error, dateValue);
       return 'Invalid date';
     }
   };
@@ -241,18 +347,96 @@ const Management = () => {
     if (!timeString) return 'Not specified';
     
     try {
-      const [hours, minutes] = timeString.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
+      // Handle different time formats
+      if (typeof timeString === 'string') {
+        // If it's already in a readable format, return as is
+        if (timeString.toLowerCase().includes('am') || timeString.toLowerCase().includes('pm')) {
+          return timeString;
+        }
+        
+        // Handle HH:MM format
+        const [hours, minutes] = timeString.split(':');
+        if (hours && minutes) {
+          const date = new Date();
+          date.setHours(parseInt(hours), parseInt(minutes));
+          
+          return date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+        }
+      }
       
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch (error) {
       return timeString;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString || 'Not specified';
     }
+  };
+
+  const getVehicleInfo = (appointment) => {
+    // Check if we have vehicleInfo field first (this is the primary field in the new data structure)
+    if (appointment.vehicleInfo && appointment.vehicleInfo !== 'N/A') {
+      return appointment.vehicleInfo;
+    }
+    
+    // Fallback to individual fields if available
+    const year = appointment.vehicleYear || '';
+    const make = appointment.vehicleMake || '';
+    const model = appointment.vehicleModel || '';
+    
+    const combined = `${year} ${make} ${model}`.trim();
+    return combined || 'Vehicle information not specified';
+  };
+
+  const getCustomerName = (appointment) => {
+    // Check if we have customerName field first (this is the primary field in the new data structure)
+    if (appointment.customerName) {
+      return appointment.customerName;
+    }
+    
+    // Fallback to individual fields if available
+    const firstName = appointment.firstName || '';
+    const lastName = appointment.lastName || '';
+    
+    const combined = `${firstName} ${lastName}`.trim();
+    return combined || 'Unknown Customer';
+  };
+
+  const getPhoneNumber = (appointment) => {
+    return appointment.phone || appointment.phoneNumber || 'Not specified';
+  };
+
+  const getServiceInfo = (appointment, isCompleted = false) => {
+    // Check serviceType first (this is the primary field in the new data structure)
+    if (appointment.serviceType) {
+      return (
+        <span className={`service-tag ${isCompleted ? 'completed' : ''}`}>
+          {appointment.serviceType}
+        </span>
+      );
+    }
+    
+    // Fallback to serviceDetails array if available
+    if (appointment.serviceDetails?.length > 0) {
+      return appointment.serviceDetails.map((service, index) => (
+        <span key={index} className={`service-tag ${isCompleted ? 'completed' : ''}`}>
+          {service}
+        </span>
+      ));
+    }
+    
+    // Check description field as another fallback
+    if (appointment.description) {
+      return (
+        <span className={`service-tag ${isCompleted ? 'completed' : ''}`}>
+          {appointment.description}
+        </span>
+      );
+    }
+    
+    return 'No services specified';
   };
 
   const getStatusIcon = (status) => {
@@ -380,10 +564,10 @@ const Management = () => {
                   <div className="customer-info">
                     <User className="customer-icon" />
                     <div>
-                      <h3>{appointment.firstName} {appointment.lastName}</h3>
+                      <h3>{getCustomerName(appointment)}</h3>
                       <div className="contact-info">
-                        <span><Phone className="contact-icon" />{appointment.phoneNumber}</span>
-                        <span><Mail className="contact-icon" />{appointment.email}</span>
+                        <span><Phone className="contact-icon" />{getPhoneNumber(appointment)}</span>
+                        <span><Mail className="contact-icon" />{appointment.email || 'Not specified'}</span>
                       </div>
                     </div>
                   </div>
@@ -400,19 +584,17 @@ const Management = () => {
                     <div className="detail-row">
                       <Calendar className="detail-icon" />
                       <span>
-                        {formatDate(appointment.appointmentDate)} at {formatTime(appointment.appointmentTime)}
+                        {formatDate(appointment.preferredDate || appointment.appointmentDate)} at {formatTime(appointment.preferredTime || appointment.appointmentTime)}
                       </span>
                     </div>
                     <div className="detail-row">
                       <Car className="detail-icon" />
-                      <span>{appointment.vehicleYear} {appointment.vehicleMake} {appointment.vehicleModel}</span>
+                      <span>{getVehicleInfo(appointment)}</span>
                     </div>
                     <div className="detail-row">
                       <FileText className="detail-icon" />
                       <span className="services">
-                        {appointment.serviceDetails?.map((service, index) => (
-                          <span key={index} className="service-tag">{service}</span>
-                        )) || 'No services specified'}
+                        {getServiceInfo(appointment)}
                       </span>
                     </div>
                   </div>
@@ -526,10 +708,10 @@ const Management = () => {
                   <div className="customer-info">
                     <User className="customer-icon" />
                     <div>
-                      <h3>{appointment.firstName} {appointment.lastName}</h3>
+                      <h3>{getCustomerName(appointment)}</h3>
                       <div className="contact-info">
-                        <span><Phone className="contact-icon" />{appointment.phoneNumber}</span>
-                        <span><Mail className="contact-icon" />{appointment.email}</span>
+                        <span><Phone className="contact-icon" />{getPhoneNumber(appointment)}</span>
+                        <span><Mail className="contact-icon" />{appointment.email || 'Not specified'}</span>
                       </div>
                     </div>
                   </div>
@@ -544,19 +726,17 @@ const Management = () => {
                     <div className="detail-row">
                       <Calendar className="detail-icon" />
                       <span>
-                        {formatDate(appointment.appointmentDate)} at {formatTime(appointment.appointmentTime)}
+                        {formatDate(appointment.preferredDate || appointment.appointmentDate)} at {formatTime(appointment.preferredTime || appointment.appointmentTime)}
                       </span>
                     </div>
                     <div className="detail-row">
                       <Car className="detail-icon" />
-                      <span>{appointment.vehicleYear} {appointment.vehicleMake} {appointment.vehicleModel}</span>
+                      <span>{getVehicleInfo(appointment)}</span>
                     </div>
                     <div className="detail-row">
                       <FileText className="detail-icon" />
                       <span className="services">
-                        {appointment.serviceDetails?.map((service, index) => (
-                          <span key={index} className="service-tag completed">{service}</span>
-                        )) || 'No services specified'}
+                        {getServiceInfo(appointment, true)}
                       </span>
                     </div>
                   </div>
@@ -570,6 +750,14 @@ const Management = () => {
                   >
                     <Eye className="btn-icon" />
                     View Details
+                  </button>
+                  <button
+                    onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
+                    className="action-btn confirm"
+                    title="Reopen as Confirmed"
+                  >
+                    <CheckCircle className="btn-icon" />
+                    Reopen
                   </button>
                 </div>
               </motion.div>
@@ -654,10 +842,7 @@ const Management = () => {
               setShowModal(false);
               setSelectedAppointment(null);
             }}
-            onUpdate={() => {
-              fetchAppointments();
-              if (activeSection === 'history') fetchAppointmentHistory();
-            }}
+            onUpdate={handleUpdateAppointment}
           />
         )}
       </AnimatePresence>

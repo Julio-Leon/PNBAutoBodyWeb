@@ -45,7 +45,13 @@ export const AuthProvider = ({ children }) => {
 
         if (response.ok) {
           const data = await response.json();
-          setUser(data.data.user);
+          // Ensure admin role is set properly
+          const adminUser = data.data;
+          if (adminUser && !adminUser.role) {
+            adminUser.role = 'admin';
+          }
+          setUser(adminUser); // Admin user data is directly in data.data
+          console.log('Admin user authenticated:', adminUser);
         } else {
           localStorage.removeItem('adminToken');
           setUser(null);
@@ -104,8 +110,16 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('adminToken', data.data.token);
-        setUser(data.data.user);
+        localStorage.setItem('adminToken', data.token); // Token is directly in data.token
+        
+        // Ensure admin role is set properly
+        const adminUser = data.data;
+        if (adminUser && !adminUser.role) {
+          adminUser.role = 'admin';
+        }
+        
+        setUser(adminUser); // User data is in data.data
+        console.log('Admin logged in:', adminUser);
         return { success: true };
       } else {
         const errorData = await response.json();

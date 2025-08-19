@@ -236,13 +236,16 @@ const updateAppointment = asyncHandler(async (req, res) => {
 
     const existingAppointment = doc.data();
 
-    // Check permissions
+    // Check permissions - only customers need ownership check
     if (req.user.role === 'customer' && existingAppointment.userId !== req.user.uid) {
       return res.status(403).json({
         success: false,
-        error: 'Access denied'
+        error: 'You can only edit your own appointments'
       });
     }
+
+    // Staff and admin can edit any appointment
+    console.log('User role:', req.user.role, 'User ID:', req.user.uid);
 
     // Handle new file uploads
     let newImages = [];

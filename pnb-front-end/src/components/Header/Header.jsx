@@ -31,6 +31,11 @@ const Header = ({ currentView, setCurrentView }) => {
         }
       }, 1000);
     }
+    
+    // Debug user role
+    if (user) {
+      console.log('Current user role:', user.role);
+    }
   }, [user, currentView, setCurrentView]);
 
   useEffect(() => {
@@ -123,14 +128,20 @@ const Header = ({ currentView, setCurrentView }) => {
 
   // Add admin navigation items if user is logged in as admin
   if (user && user.role === 'admin') {
-    navItems.push(
-      { 
-        label: 'Admin Dashboard', 
-        id: 'management', 
-        action: () => handleNavigation('management'),
-        isAdmin: true 
-      }
-    );
+    // Check if the Admin Dashboard nav item already exists
+    const adminDashboardExists = navItems.some(item => item.id === 'management');
+    
+    if (!adminDashboardExists) {
+      console.log('Adding Admin Dashboard to navItems');
+      navItems.push(
+        { 
+          label: 'Admin Dashboard', 
+          id: 'management', 
+          action: () => handleNavigation('management'),
+          isAdmin: true 
+        }
+      );
+    }
   }
 
   return (
