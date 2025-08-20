@@ -1153,3 +1153,315 @@
   color: #94a3b8;
   font-style: italic;
 }
+
+/* Admin Dashboard-style appointment card styles */
+.appointment-card.status-pending {
+  border-left: 4px solid #fbbf24;
+  background: #fefbf3;
+}
+
+.appointment-card.status-confirmed {
+  border-left: 4px solid #60a5fa;
+  background: #f0f8ff;
+}
+
+.appointment-card.status-completed {
+  border-left: 4px solid #34d399;
+  background: #f0fdf4;
+}
+
+.appointment-card.status-cancelled {
+  border-left: 4px solid #f87171;
+  background: #fef2f2;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.customer-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.customer-icon {
+  color: #667eea;
+  min-width: 20px;
+  margin-top: 2px;
+}
+
+.customer-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contact-info span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.contact-icon {
+  width: 12px;
+  height: 12px;
+  color: #888;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.status-badge .status-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.status-badge.pending,
+.status-badge:has(.status-text.pending) {
+  background: #fef3c7;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+}
+
+.status-badge.confirmed,
+.status-badge:has(.status-text.confirmed) {
+  background: #dcfce7;
+  color: #14532d;
+  border: 1px solid #22c55e;
+}
+
+.status-badge.completed,
+.status-badge:has(.status-text.completed) {
+  background: #e0e7ff;
+  color: #312e81;
+  border: 1px solid #6366f1;
+}
+
+.status-badge.cancelled,
+.status-badge:has(.status-text.cancelled) {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border: 1px solid #ef4444;
+}
+
+.card-content {
+  margin-bottom: 16px;
+}
+
+.appointment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.detail-icon {
+  color: #667eea;
+  min-width: 16px;
+  height: 16px;
+}
+
+.detail-row span {
+  word-break: break-word;
+}
+
+.services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.service-tag {
+  background: #e0e7ff;
+  color: #312e81;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.service-tag.completed {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.payment-method {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  background: #fff;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  min-width: 36px;
+  height: 36px;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.action-btn.view {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.action-btn.view:hover:not(:disabled) {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.action-btn.edit {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.action-btn.edit:hover:not(:disabled) {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.action-btn.delete {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.action-btn.delete:hover:not(:disabled) {
+  background: #ef4444;
+  color: #fff;
+}
+
+.btn-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* History Cards */
+.appointment-card.history-card {
+  border-left: 4px solid #34d399 !important;
+  background: #f0fdf4 !important;
+}
+
+.appointment-card.history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.completion-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+  background: #e0e7ff;
+  color: #312e81;
+  border: 1px solid #6366f1;
+}
+
+.completion-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Status icons */
+.status-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.status-icon.pending {
+  color: #f59e0b;
+}
+
+.status-icon.confirmed {
+  color: #22c55e;
+}
+
+.status-icon.completed {
+  color: #6366f1;
+}
+
+.status-icon.cancelled {
+  color: #ef4444;
+}
+
+/* Dark Mode for History Cards */
+.dark-mode .history-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .history-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .appointment-status.completed {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}

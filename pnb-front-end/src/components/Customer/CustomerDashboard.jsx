@@ -17,7 +17,10 @@ import {
   Trash2,
   Plus,
   Settings,
-  History
+  History,
+  Eye,
+  Check,
+  CheckCheck
 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
@@ -154,6 +157,11 @@ const CustomerDashboard = () => {
   const handleEditAppointment = (appointment) => {
     setSelectedAppointment(appointment);
     setShowEditModal(true);
+  };
+
+  const handleViewAppointment = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowEditModal(true); // For now, use the same modal for viewing as editing
   };
 
   const handleDeleteAppointment = (appointment) => {
@@ -426,18 +434,83 @@ const CustomerDashboard = () => {
     return timeString;
   };
 
+  // Helper functions for displaying appointment data (matching Admin Dashboard format)
+  const getVehicleInfo = (appointment) => {
+    // Check if we have vehicleInfo field first (this is the primary field in the new data structure)
+    if (appointment.vehicleInfo && appointment.vehicleInfo !== 'N/A') {
+      return appointment.vehicleInfo;
+    }
+    
+    // Fallback to individual fields if available
+    const year = appointment.vehicleYear || '';
+    const make = appointment.vehicleMake || '';
+    const model = appointment.vehicleModel || '';
+    
+    const combined = `${year} ${make} ${model}`.trim();
+    return combined || 'Vehicle information not specified';
+  };
+
+  const getCustomerName = (appointment) => {
+    // Check if we have customerName field first (this is the primary field in the new data structure)
+    if (appointment.customerName) {
+      return appointment.customerName;
+    }
+    
+    // Fallback to individual fields if available
+    const firstName = appointment.firstName || '';
+    const lastName = appointment.lastName || '';
+    
+    const combined = `${firstName} ${lastName}`.trim();
+    return combined || user?.name || 'Unknown Customer';
+  };
+
+  const getPhoneNumber = (appointment) => {
+    return appointment.phone || appointment.phoneNumber || 'Not specified';
+  };
+
+  const getServiceInfo = (appointment, isCompleted = false) => {
+    // Check serviceType first (this is the primary field in the new data structure)
+    if (appointment.serviceType) {
+      return (
+        <span className={`service-tag ${isCompleted ? 'completed' : ''}`}>
+          {appointment.serviceType}
+        </span>
+      );
+    }
+    
+    // Fallback to serviceDetails array if available
+    if (appointment.serviceDetails?.length > 0) {
+      return appointment.serviceDetails.map((service, index) => (
+        <span key={index} className={`service-tag ${isCompleted ? 'completed' : ''}`}>
+          {service}
+        </span>
+      ));
+    }
+    
+    // Check description field as another fallback
+    if (appointment.description) {
+      return (
+        <span className={`service-tag ${isCompleted ? 'completed' : ''}`}>
+          {appointment.description}
+        </span>
+      );
+    }
+    
+    return 'No services specified';
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
-        return <Clock size={16} />;
+        return <Clock className="status-icon pending" />;
       case 'confirmed':
-        return <CheckCircle size={16} />;
+        return <CheckCircle className="status-icon confirmed" />;
       case 'completed':
-        return <FileText size={16} />;
+        return <Check className="status-icon completed" />;
       case 'cancelled':
-        return <XCircle size={16} />;
+        return <XCircle className="status-icon cancelled" />;
       default:
-        return <AlertCircle size={16} />;
+        return <AlertCircle className="status-icon" />;
     }
   };
 
@@ -565,74 +638,87 @@ const CustomerDashboard = () => {
               ).map((appointment, index) => (
                 <motion.div
                   key={appointment.id}
-                  className="appointment-card"
+                  className={`appointment-card status-${appointment.status}`}
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -50 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                   layout
+                  whileHover={{ y: -5 }}
                 >
-                  <div className="appointment-header">
-                    <div className="appointment-id">#{appointment.id?.slice(-8) || 'N/A'}</div>
-                    <div 
-                      className={`status-badge ${appointment.status || 'pending'}`}
-                    >
+                  <div className="card-header">
+                    <div className="customer-info">
+                      <User className="customer-icon" />
+                      <div>
+                        <h3>{getCustomerName(appointment)}</h3>
+                        <div className="contact-info">
+                          <span><Phone className="contact-icon" />{getPhoneNumber(appointment)}</span>
+                          <span><Mail className="contact-icon" />{appointment.email || 'Not specified'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="status-badge">
                       {getStatusIcon(appointment.status)}
-                      {(appointment.status || 'pending').charAt(0).toUpperCase() + (appointment.status || 'pending').slice(1)}
+                      <span className={`status-text ${appointment.status}`}>
+                        {(appointment.status || 'pending').charAt(0).toUpperCase() + (appointment.status || 'pending').slice(1)}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="appointment-info">
-                    <h3>{appointment.serviceType || appointment.damageType || 'Service Request'}</h3>
+                  <div className="card-content">
                     <div className="appointment-details">
-                      <strong>Vehicle:</strong> {appointment.vehicleInfo || 'N/A'}<br />
-                      {appointment.description && (
-                        <>
-                          <strong>Description:</strong> {appointment.description}<br />
-                        </>
-                      )}
-                      <strong>Payment:</strong> {appointment.paymentMethod || 'N/A'}
-                      {appointment.insuranceCompany && appointment.paymentMethod === 'insurance' && (
-                        <> ({appointment.insuranceCompany})</>
+                      <div className="detail-row">
+                        <Calendar className="detail-icon" />
+                        <span>
+                          {formatDate(appointment.preferredDate || appointment.appointmentDate)} at {formatTime(appointment.preferredTime || appointment.appointmentTime)}
+                        </span>
+                      </div>
+                      <div className="detail-row">
+                        <Car className="detail-icon" />
+                        <span>{getVehicleInfo(appointment)}</span>
+                      </div>
+                      <div className="detail-row">
+                        <FileText className="detail-icon" />
+                        <span className="services">
+                          {getServiceInfo(appointment)}
+                        </span>
+                      </div>
+                      {appointment.paymentMethod && (
+                        <div className="detail-row">
+                          <span className="payment-method">
+                            Payment: {appointment.paymentMethod}
+                            {appointment.insuranceCompany && appointment.paymentMethod === 'insurance' && (
+                              <> ({appointment.insuranceCompany})</>
+                            )}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="appointment-meta">
-                    <div className="meta-item">
-                      <Calendar size={14} />
-                      <span>Date: {formatDate(appointment.preferredDate)}</span>
-                    </div>
-                    <div className="meta-item">
-                      <Clock size={14} />
-                      <span>Time: {formatTime(appointment.preferredTime)}</span>
-                    </div>
-                    <div className="meta-item">
-                      <Mail size={14} />
-                      <span>{appointment.email || 'N/A'}</span>
-                    </div>
-                    <div className="meta-item">
-                      <Phone size={14} />
-                      <span>{appointment.phone || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  <div className="appointment-actions">
+                  <div className="card-actions">
                     <button
-                      className="action-btn edit"
+                      onClick={() => handleViewAppointment(appointment)}
+                      className="action-btn view"
+                      title="View Details"
+                    >
+                      <Eye className="btn-icon" />
+                    </button>
+                    <button
                       onClick={() => handleEditAppointment(appointment)}
+                      className="action-btn edit"
                       title="Edit Appointment"
                       disabled={appointment.status === 'completed' || appointment.status === 'cancelled'}
                     >
-                      <Edit size={16} />
+                      <Edit className="btn-icon" />
                     </button>
                     <button
-                      className="action-btn delete"
                       onClick={() => handleDeleteAppointment(appointment)}
+                      className="action-btn delete"
                       title="Delete Appointment"
                       disabled={appointment.status === 'completed'}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 className="btn-icon" />
                     </button>
                   </div>
 
@@ -795,53 +881,62 @@ const CustomerDashboard = () => {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                     >
-                      <div className="appointment-header">
-                        <div className="status-indicator">
-                          <div className="status-badge completed">
-                            {getStatusIcon('completed')}
-                            <span>Completed</span>
+                      <div className="card-header">
+                        <div className="customer-info">
+                          <User className="customer-icon" />
+                          <div>
+                            <h3>{getCustomerName(appointment)}</h3>
+                            <div className="contact-info">
+                              <span><Phone className="contact-icon" />{getPhoneNumber(appointment)}</span>
+                              <span><Mail className="contact-icon" />{appointment.email || 'Not specified'}</span>
+                            </div>
                           </div>
-                          {appointment.customAppointmentId && (
-                            <div className="appointment-id">
-                              #{appointment.customAppointmentId}
+                        </div>
+                        <div className="completion-badge">
+                          <CheckCheck className="completion-icon" />
+                          <span>Completed</span>
+                        </div>
+                      </div>
+
+                      <div className="card-content">
+                        <div className="appointment-details">
+                          <div className="detail-row">
+                            <Calendar className="detail-icon" />
+                            <span>
+                              {formatDate(appointment.preferredDate || appointment.appointmentDate)} at {formatTime(appointment.preferredTime || appointment.appointmentTime)}
+                            </span>
+                          </div>
+                          <div className="detail-row">
+                            <Car className="detail-icon" />
+                            <span>{getVehicleInfo(appointment)}</span>
+                          </div>
+                          <div className="detail-row">
+                            <FileText className="detail-icon" />
+                            <span className="services">
+                              {getServiceInfo(appointment, true)}
+                            </span>
+                          </div>
+                          {appointment.paymentMethod && (
+                            <div className="detail-row">
+                              <span className="payment-method">
+                                Payment: {appointment.paymentMethod}
+                                {appointment.insuranceCompany && appointment.paymentMethod === 'insurance' && (
+                                  <> ({appointment.insuranceCompany})</>
+                                )}
+                              </span>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="appointment-info">
-                        <h3>{appointment.serviceType || appointment.damageType || 'Service Request'}</h3>
-                        <div className="appointment-details">
-                          <strong>Vehicle:</strong> {appointment.vehicleInfo || 'N/A'}<br />
-                          {appointment.description && (
-                            <>
-                              <strong>Description:</strong> {appointment.description}<br />
-                            </>
-                          )}
-                          <strong>Payment:</strong> {appointment.paymentMethod || 'N/A'}
-                          {appointment.insuranceCompany && appointment.paymentMethod === 'insurance' && (
-                            <> ({appointment.insuranceCompany})</>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="appointment-meta">
-                        <div className="meta-item">
-                          <Calendar size={14} />
-                          <span>Date: {formatDate(appointment.preferredDate)}</span>
-                        </div>
-                        <div className="meta-item">
-                          <Clock size={14} />
-                          <span>Time: {formatTime(appointment.preferredTime)}</span>
-                        </div>
-                        <div className="meta-item">
-                          <Mail size={14} />
-                          <span>{appointment.email || 'N/A'}</span>
-                        </div>
-                        <div className="meta-item">
-                          <Phone size={14} />
-                          <span>{appointment.phone || 'N/A'}</span>
-                        </div>
+                      <div className="card-actions">
+                        <button
+                          onClick={() => handleViewAppointment(appointment)}
+                          className="action-btn view"
+                          title="View Details"
+                        >
+                          <Eye className="btn-icon" />
+                        </button>
                       </div>
 
                       <div className="appointment-footer">

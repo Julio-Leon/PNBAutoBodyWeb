@@ -625,7 +625,6 @@ const Management = () => {
                     title="View Details"
                   >
                     <Eye className="btn-icon" />
-                    View
                   </button>
                   <button
                     onClick={() => handleEditAppointment(appointment)}
@@ -633,7 +632,6 @@ const Management = () => {
                     title="Edit Appointment"
                   >
                     <Edit className="btn-icon" />
-                    Edit
                   </button>
                   
                   {appointment.status === 'pending' && (
@@ -643,7 +641,6 @@ const Management = () => {
                       title="Confirm Appointment"
                     >
                       <CheckCircle className="btn-icon" />
-                      Confirm
                     </button>
                   )}
                   
@@ -654,7 +651,6 @@ const Management = () => {
                       title="Mark as Completed"
                     >
                       <Check className="btn-icon" />
-                      Complete
                     </button>
                   )}
                   
@@ -664,7 +660,6 @@ const Management = () => {
                     title="Delete Appointment"
                   >
                     <Trash2 className="btn-icon" />
-                    Delete
                   </button>
                 </div>
               </motion.div>
@@ -767,7 +762,6 @@ const Management = () => {
                     title="View Details"
                   >
                     <Eye className="btn-icon" />
-                    View Details
                   </button>
                   <button
                     onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
@@ -775,7 +769,6 @@ const Management = () => {
                     title="Reopen as Confirmed"
                   >
                     <CheckCircle className="btn-icon" />
-                    Reopen
                   </button>
                 </div>
               </motion.div>
