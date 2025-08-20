@@ -12,8 +12,6 @@ import {
   Edit,
   Trash2,
   RefreshCw,
-  Search,
-  Filter,
   CheckCircle,
   AlertCircle,
   XCircle,
@@ -32,11 +30,8 @@ import './Management.css';
 const Management = () => {
   const [appointments, setAppointments] = useState([]);
   const [appointmentHistory, setAppointmentHistory] = useState([]);
-  const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -51,54 +46,9 @@ const Management = () => {
 
   const { user } = useContext(AuthContext);
 
-  // DEBUG: Test admin permissions
-  const testAdminPermissions = async () => {
-    try {
-      const adminToken = localStorage.getItem('adminToken');
-      console.log('Testing admin permissions with token:', adminToken ? 'Present' : 'Missing');
-      
-      if (!adminToken) {
-        alert('No admin token found. Please log in again.');
-        return;
-      }
-      
-      // Test admin verify endpoint
-      const verifyResponse = await fetch(`${API_BASE_URL}/admin/verify`, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const verifyData = await verifyResponse.json();
-      console.log('Admin verify response:', verifyData);
-      
-      // Test appointment permissions endpoint
-      const testResponse = await fetch(`${API_BASE_URL}/appointments/debug-admin-test`, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const testData = await testResponse.json();
-      console.log('Appointment permission test response:', testData);
-      
-      alert('Check console for debug info. Admin verified: ' + (verifyData.success ? 'YES' : 'NO'));
-      
-    } catch (error) {
-      console.error('Debug test error:', error);
-      alert('Debug test failed: ' + error.message);
-    }
-  };
-
   useEffect(() => {
     fetchAppointments();
   }, []);
-
-  useEffect(() => {
-    filterAndSearchAppointments();
-  }, [appointments, filter, searchTerm]);
 
   useEffect(() => {
     if (appointments.length > 0) {
@@ -171,32 +121,6 @@ const Management = () => {
       completed: appointmentsData.filter(apt => apt.status === 'completed').length
     };
     setStats(stats);
-  };
-
-  const filterAndSearchAppointments = () => {
-    // Start with appointments and filter out completed ones for the active appointments tab
-    let filtered = appointments.filter(apt => apt.status !== 'completed');
-    
-    // Apply additional filter if not showing all
-    if (filter !== 'all') {
-      filtered = filtered.filter(apt => apt.status === filter);
-    }
-    
-    // Apply search term filter
-    if (searchTerm) {
-      filtered = filtered.filter(apt => 
-        apt.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.phoneNumber.includes(searchTerm)
-      );
-    }
-    
-    setFilteredAppointments(filtered);
-  };
-
-  const handleFilterChange = (newFilter) => {
-    setFilter(newFilter);
   };
 
   const handleDelete = (appointment) => {
@@ -587,37 +511,6 @@ const Management = () => {
             <Calendar className="section-icon" />
             <h2>Appointments Management</h2>
           </div>
-          <div className="header-actions">
-            <div className="search-bar">
-              <Search className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search appointments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
-            <select
-              className="filter-select"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="all">All Active</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <button
-              onClick={() => {
-                fetchAppointments();
-              }}
-              className="refresh-btn"
-              title="Refresh"
-            >
-              <RefreshCw className="btn-icon" />
-            </button>
-          </div>
         </div>
 
         <div className="stats-grid">
@@ -666,15 +559,15 @@ const Management = () => {
             <RefreshCw className="loading-spinner" />
             <p>Loading appointments...</p>
           </div>
-        ) : filteredAppointments.length === 0 ? (
+        ) : appointments.filter(apt => apt.status !== 'completed').length === 0 ? (
           <div className="empty-state">
             <Calendar className="empty-icon" />
             <p>No appointments found</p>
-            <span>Try adjusting your search or filter criteria</span>
+            <span>No active appointments at this time</span>
           </div>
         ) : (
           <div className="appointments-grid">
-            {filteredAppointments.map((appointment) => (
+            {appointments.filter(apt => apt.status !== 'completed').map((appointment) => (
               <motion.div
                 key={appointment.id}
                 className={`appointment-card status-${appointment.status}`}
@@ -909,21 +802,6 @@ const Management = () => {
               <p>Manage appointments and view system analytics</p>
             </div>
           </div>
-          <button 
-            onClick={testAdminPermissions}
-            style={{ 
-              backgroundColor: '#ff6b35', 
-              color: 'white', 
-              padding: '8px 12px', 
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              height: 'fit-content'
-            }}
-          >
-            🔧 Debug Auth
-          </button>
         </div>
 
         <div className="section-tabs">
