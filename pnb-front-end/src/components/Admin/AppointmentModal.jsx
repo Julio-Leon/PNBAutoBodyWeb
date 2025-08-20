@@ -361,7 +361,8 @@ const AppointmentModal = ({ appointment, mode, onClose, onUpdate }) => {
                           className={`service-type-option ${editData.serviceType === type.value ? 'selected' : ''}`}
                           onClick={() => setEditData(prev => ({
                             ...prev,
-                            serviceType: type.value
+                            serviceType: type.value,
+                            selectedServices: [] // Clear selected services when service type changes
                           }))}
                         >
                           {type.label}
