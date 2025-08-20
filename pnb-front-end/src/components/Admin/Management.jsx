@@ -679,15 +679,6 @@ const Management = () => {
             <h2>Appointment History</h2>
             <span className="section-subtitle">Completed appointments</span>
           </div>
-          <div className="header-actions">
-            <button
-              onClick={fetchAppointmentHistory}
-              className="refresh-btn"
-              title="Refresh History"
-            >
-              <RefreshCw className="btn-icon" />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -703,9 +694,6 @@ const Management = () => {
             <History className="empty-icon" />
             <p>No completed appointments yet</p>
             <span>Completed appointments will appear here</span>
-            <button onClick={fetchAppointmentHistory} className="retry-btn">
-              <RefreshCw size={16} /> Retry Loading History
-            </button>
           </div>
         ) : (
           <div className="appointments-grid">
