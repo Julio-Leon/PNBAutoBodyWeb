@@ -8,7 +8,8 @@ const {
   getUserAppointments,
   updateAppointmentStatus,
   getUserAppointmentHistory,
-  getAdminAppointmentHistory
+  getAdminAppointmentHistory,
+  sendAppointmentSMS
 } = require('../controllers/appointmentController');
 
 const { verifyToken, requireStaff, optionalAuth } = require('../middleware/auth');
@@ -79,5 +80,8 @@ router.get('/admin/history', requireStaff, getAdminAppointmentHistory);
 
 // Get appointments for a specific user (staff/admin only)
 router.get('/user/:userId', requireStaff, getUserAppointments);
+
+// Send/Resend SMS notification for an appointment
+router.post('/:id/send-sms', requireStaff, sendAppointmentSMS);
 
 module.exports = router;

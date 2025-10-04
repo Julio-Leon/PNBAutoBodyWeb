@@ -108,7 +108,7 @@ const Services = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <h2>Our Services & Expertise</h2>
+          <h2>Expertise</h2>
           <p>Professional auto body repair with unmatched quality and service</p>
         </motion.div>
 

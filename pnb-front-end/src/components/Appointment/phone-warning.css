@@ -1,0 +1,43 @@
+/* Missing Phone Warning Styles */
+.missing-phone-warning {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: rgba(254, 240, 138, 0.3);
+  border-left: 3px solid #fbbf24;
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.warning-icon {
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.profile-link-button {
+  background: none;
+  border: none;
+  padding: 0 0.25rem;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.profile-link-button:hover {
+  color: #1d4ed8;
+}
+
+.phone-field-container {
+  position: relative;
+}
+
+.readonly-field {
+  background-color: #f8fafc;
+}

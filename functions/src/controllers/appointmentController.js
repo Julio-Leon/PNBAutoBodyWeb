@@ -1,5 +1,7 @@
 const { initializeFirebase, getDb } = require('../config/firebase');
 const storageService = require('../services/storageService');
+const emailService = require('../services/emailService');
+const smsService = require('../services/smsService');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // Initialize Firebase
@@ -198,12 +200,93 @@ const createAppointment = asyncHandler(async (req, res) => {
 
     const docRef = await appointmentsCollection.add(cleanedAppointmentData);
 
+    // Prepare response data with the document ID
+    const responseData = {
+      id: docRef.id,
+      ...cleanedAppointmentData
+    };
+
+    console.log('🔍 User authentication check:', {
+      hasUser: !!req.user,
+      userId: req.user?.uid,
+      userRole: req.user?.role,
+      authHeader: !!req.headers.authorization
+    });
+
+    // Send email and SMS notifications only if user is logged in
+    if (req.user?.uid) {
+      console.log('📧 Sending appointment confirmation email for logged-in user:', req.user.uid);
+      console.log('📧 Email recipient:', responseData.email);
+      
+      // Send email confirmation
+      try {
+        const emailResult = await emailService.sendAppointmentConfirmation({
+          ...responseData,
+          // Ensure we have all needed fields for email
+          selectedServices: appointmentData.selectedServices || [],
+          damageType: appointmentData.damageType
+        });
+        
+        if (emailResult.success) {
+          console.log('✅ Appointment confirmation email sent successfully:', emailResult.messageId);
+        } else {
+          console.warn('❌ Failed to send appointment confirmation email:', emailResult.error);
+          // Don't fail the appointment creation if email fails
+        }
+      } catch (emailError) {
+        console.error('💥 Error sending appointment confirmation email:', emailError);
+        // Don't fail the appointment creation if email fails
+      }
+      
+      // Send SMS confirmation if phone number is provided
+      if (responseData.phone) {
+        // Validate phone number has at least 10 digits
+        const digitsOnly = responseData.phone.replace(/\D/g, '');
+        if (digitsOnly.length >= 10) {
+          console.log('📱 Sending SMS confirmation to user\'s phone');
+          try {
+            // Add appointment ID to the response data for reference in SMS
+            const appointmentWithId = {
+              ...responseData,
+              // Ensure we have all needed fields for SMS
+              selectedServices: appointmentData.selectedServices || [],
+              damageType: appointmentData.damageType
+            };
+            
+            // Send the SMS via our service
+            const smsResult = await smsService.sendAppointmentConfirmation(appointmentWithId);
+            
+            if (smsResult.success) {
+              console.log('✅ SMS confirmation sent successfully:', smsResult.messageSid);
+              
+              // Update the appointment with the message SID for reference
+              await appointmentsCollection.doc(docRef.id).update({
+                smsSent: true,
+                smsMessageSid: smsResult.messageSid,
+                smsStatus: smsResult.status || 'queued',
+                updatedAt: new Date()
+              });
+            } else {
+              console.warn('❌ Failed to send SMS confirmation:', smsResult.error);
+              // Don't fail the appointment creation if SMS fails
+            }
+          } catch (smsError) {
+            console.error('💥 Error sending SMS confirmation:', smsError);
+            // Don't fail the appointment creation if SMS fails
+          }
+        } else {
+          console.log(`⚠️ Phone number format invalid: ${responseData.phone} (${digitsOnly.length} digits)`);
+        }
+      } else {
+        console.log('⏭️ Skipping SMS notification - no phone number provided');
+      }
+    } else {
+      console.log('⏭️ Skipping notifications - user not logged in');
+    }
+
     res.status(201).json({
       success: true,
-      data: {
-        id: docRef.id,
-        ...cleanedAppointmentData
-      },
+      data: responseData,
       message: 'Appointment created successfully'
     });
   } catch (error) {
@@ -555,6 +638,79 @@ const getAdminAppointmentHistory = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc    Send/Resend SMS notification for an appointment
+ * @route   POST /api/appointments/:id/send-sms
+ * @access  Private (Admin/Staff)
+ */
+const sendAppointmentSMS = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customMessage } = req.body; // Optional custom message
+    
+    // Get the appointment
+    const doc = await appointmentsCollection.doc(id).get();
+    
+    if (!doc.exists) {
+      return res.status(404).json({
+        success: false,
+        error: 'Appointment not found'
+      });
+    }
+    
+    const appointmentData = {
+      id: doc.id,
+      ...doc.data()
+    };
+    
+    // Validate appointment has a phone number
+    if (!appointmentData.phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Appointment does not have a phone number'
+      });
+    }
+    
+    // If there's a custom message, add it to the appointment data
+    if (customMessage) {
+      appointmentData.customMessage = customMessage;
+    }
+    
+    // Send the SMS
+    const smsResult = await smsService.sendAppointmentConfirmation(appointmentData);
+    
+    if (smsResult.success) {
+      // Update appointment with SMS information
+      await appointmentsCollection.doc(id).update({
+        smsSent: true,
+        smsMessageSid: smsResult.messageSid,
+        smsStatus: smsResult.status || 'queued',
+        lastSmsSentAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      return res.status(200).json({
+        success: true,
+        message: 'SMS notification sent successfully',
+        smsResult
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: smsResult.error || 'Failed to send SMS notification',
+        details: smsResult
+      });
+    }
+  } catch (error) {
+    console.error('Send appointment SMS error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send SMS notification',
+      details: error.message
+    });
+  }
+});
+
 module.exports = {
   getAppointments,
   getAppointment,
@@ -564,5 +720,6 @@ module.exports = {
   getUserAppointments,
   updateAppointmentStatus,
   getUserAppointmentHistory,
-  getAdminAppointmentHistory
+  getAdminAppointmentHistory,
+  sendAppointmentSMS
 };

@@ -49,6 +49,16 @@ const CustomerDashboard = () => {
   const [activeSection, setActiveSection] = useState('appointments');
 
   const { user } = useContext(AuthContext);
+  
+  // Function to navigate to profile settings
+  const goToProfileSettings = () => {
+    // This assumes you have some way to navigate between views, similar to App.jsx
+    // You might need to adjust this depending on your routing setup
+    if (typeof window !== 'undefined') {
+      // If using window location
+      window.location.href = '#profile';
+    }
+  };
 
   useEffect(() => {
     if (user) {

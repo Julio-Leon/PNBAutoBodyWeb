@@ -175,13 +175,58 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
+  const updateUserProfile = async (profileData) => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        return { success: false, error: 'Authentication error. Please log in again.' };
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the local user state with the new data
+        setUser(prevUser => ({
+          ...prevUser,
+          ...data.user
+        }));
+        return { success: true, user: data.user };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error || 'Failed to update profile' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
+  
+  // Refresh user data from server
+  const refreshUser = async () => {
+    try {
+      await checkAuthStatus();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Failed to refresh user data' };
+    }
+  };
+
   const value = {
     user,
     login,
     userLogin,
     logout,
     forceReset,
-    loading
+    loading,
+    updateUserProfile,
+    refreshUser
   };
 
   return (

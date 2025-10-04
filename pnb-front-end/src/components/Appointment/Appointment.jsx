@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Calendar, CreditCard, Shield, Phone, Mail, User, Camera, FileText, Car } from 'lucide-react';
 import './Appointment.css';
+import './phone-warning.css';
 import { API_BASE_URL } from '../../config/api';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -30,9 +31,29 @@ const Appointment = () => {
   const [userVehicles, setUserVehicles] = useState([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(false);
 
+  // State for phone number notification
+  const [showPhoneWarning, setShowPhoneWarning] = useState(false);
+
   // Auto-fill user information when user is logged in
   useEffect(() => {
     if (user && user.role === 'customer') {
+      // Log user data to help with debugging
+      console.log('User data for appointment form:', {
+        fullName: user.fullName,
+        name: user.name,
+        customerName: user.customerName,
+        email: user.email,
+        phone: user.phone,
+        hasPhone: !!user.phone
+      });
+      
+      // Check if the user has a phone number
+      if (!user.phone) {
+        setShowPhoneWarning(true);
+      } else {
+        setShowPhoneWarning(false);
+      }
+      
       setFormData(prev => ({
         ...prev,
         name: user.fullName || user.name || user.customerName || '',
@@ -289,7 +310,8 @@ const Appointment = () => {
       const result = await response.json();
 
       if (response.ok) {
-        setSubmitMessage('Thank you! Your appointment request has been submitted successfully. We will contact you soon.');
+        const smsMessage = user?.uid ? ' You will receive a confirmation via email and SMS shortly.' : '';
+        setSubmitMessage(`Thank you! Your appointment request has been submitted successfully.${smsMessage} We will contact you soon.`);
         // Reset form
         setFormData({
           name: '',
@@ -379,18 +401,37 @@ const Appointment = () => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="phone">Phone Number *</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  readOnly={user && user.role === 'customer'}
-                  className={user && user.role === 'customer' ? 'readonly-field' : ''}
-                  title={user && user.role === 'customer' ? 'This field is auto-filled from your account' : ''}
-                />
+                <label htmlFor="phone">Phone Number * <small>(for appointment updates via SMS)</small></label>
+                <div className="phone-field-container">
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="(123) 456-7890"
+                    pattern="^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$"
+                    required
+                    readOnly={user && user.role === 'customer'}
+                    className={user && user.role === 'customer' ? 'readonly-field' : ''}
+                    title={user && user.role === 'customer' ? 'This field is auto-filled from your account' : 'Enter a valid phone number for SMS appointment updates'}
+                  />
+                  {user && user.role === 'customer' && !formData.phone && (
+                    <div className="missing-phone-warning">
+                      <span className="warning-icon">⚠️</span>
+                      <span>
+                        Add a phone number to your profile to receive SMS notifications.
+                        <button 
+                          type="button" 
+                          className="profile-link-button" 
+                          onClick={() => window.location.hash = '#profile-settings?from=appointment'}
+                        >
+                          Update Profile
+                        </button>
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="form-group">
                 <label htmlFor="vehicleInfo">Vehicle Information *</label>

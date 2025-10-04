@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
+const emailService = require('./src/services/emailService');
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
@@ -21,6 +22,74 @@ app.get('/health', (req, res) => {
     message: 'PNJ Auto Body API is running',
     timestamp: new Date().toISOString()
   });
+});
+
+// Test email endpoint (for debugging only)
+app.get('/test-email', async (req, res) => {
+  try {
+    console.log('📧 TEST EMAIL - Starting test...');
+    
+    // Log environment variables (don't log actual values)
+    console.log('📧 Environment check:');
+    console.log('- SENDGRID_API_KEY exists:', !!process.env.SENDGRID_API_KEY);
+    console.log('- functions.config().sendgrid:', !!functions.config().sendgrid);
+    
+    const testAppointment = {
+      id: 'test-' + Date.now(),
+      customerName: 'Test Customer',
+      email: req.query.email || 'test@example.com', // Allow email override in query
+      phone: '123-456-7890',
+      vehicleInfo: '2023 Tesla Model 3',
+      serviceType: 'body',
+      damageType: 'Front Bumper Damage',
+      selectedServices: ['Front Bumper Repair', 'Paint Job'],
+      description: 'Test appointment for email debugging',
+      preferredDate: new Date(),
+      preferredTime: '10:00 AM',
+      paymentMethod: 'insurance',
+      insuranceCompany: 'Test Insurance',
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    console.log('📧 Sending test email to:', testAppointment.email);
+    
+    try {
+      const emailResult = await emailService.sendAppointmentConfirmation(testAppointment);
+      
+      if (emailResult.success) {
+        console.log('✅ Test email sent successfully:', emailResult.messageId);
+        res.json({
+          success: true,
+          message: 'Test email sent successfully',
+          details: emailResult
+        });
+      } else {
+        console.warn('❌ Test email failed:', emailResult.error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to send test email',
+          details: emailResult
+        });
+      }
+    } catch (emailError) {
+      console.error('💥 Test email error:', emailError);
+      res.status(500).json({
+        success: false,
+        error: 'Error sending test email',
+        stack: emailError.stack,
+        message: emailError.message
+      });
+    }
+  } catch (error) {
+    console.error('💥 Test endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Test endpoint error',
+      message: error.message
+    });
+  }
 });
 
 // Database health check
@@ -244,20 +313,27 @@ app.get('/appointments', async (req, res) => {
 // Create appointment
 app.post('/appointments', async (req, res) => {
   try {
-    console.log('Received appointment data:', req.body);
-    console.log('Damage type from body:', req.body.damageType);
+    console.log('🔍 Received appointment data:', req.body);
+    console.log('🔍 Damage type from body:', req.body.damageType);
 
     const db = admin.firestore();
     
     // Check if user is authenticated and get user ID
     const token = req.headers.authorization?.replace('Bearer ', '');
     let userId = null;
+    let isLoggedIn = false;
+    
+    console.log('🔍 Authorization token:', token ? token.substring(0, 15) + '...' : 'No token');
     
     if (token && token.startsWith('user-')) {
       const tokenParts = token.split('-');
       if (tokenParts.length >= 2) {
         userId = tokenParts[1];
+        isLoggedIn = true;
+        console.log('✅ User authenticated:', userId);
       }
+    } else {
+      console.log('⏭️ User not authenticated - will skip email notification');
     }
     
     const appointmentData = {
@@ -265,6 +341,7 @@ app.post('/appointments', async (req, res) => {
       email: req.body.email || 'N/A',
       phone: req.body.phone || 'N/A',
       vehicleInfo: req.body.vehicleInfo || 'N/A',
+      vehicleId: req.body.vehicleId || null, // Include vehicleId for logged-in users
       serviceType: req.body.serviceType || req.body.damageType || 'N/A',
       selectedServices: req.body.selectedServices || [], // NEW: Handle selected services array
       damageType: req.body.damageType || (req.body.selectedServices ? req.body.selectedServices.join(', ') : null), // Backward compatibility
@@ -310,7 +387,7 @@ app.post('/appointments', async (req, res) => {
       }
     }
 
-    console.log('Processed appointment data:', appointmentData);
+    console.log('📝 Processed appointment data:', appointmentData);
 
     const docRef = await db.collection('appointments').add(appointmentData);
 
@@ -330,6 +407,32 @@ app.post('/appointments', async (req, res) => {
       updatedAt: convertDate(appointmentData.updatedAt),
       preferredDate: convertDate(appointmentData.preferredDate)
     };
+
+    // 📧 SEND EMAIL NOTIFICATION ONLY IF USER IS LOGGED IN
+    if (isLoggedIn && userId) {
+      console.log('📧 Sending appointment confirmation email for logged-in user:', userId);
+      console.log('📧 Email recipient:', responseData.email);
+      try {
+        const emailResult = await emailService.sendAppointmentConfirmation({
+          ...responseData,
+          // Ensure we have all needed fields for email
+          selectedServices: appointmentData.selectedServices || [],
+          damageType: appointmentData.damageType
+        });
+        
+        if (emailResult.success) {
+          console.log('✅ Appointment confirmation email sent successfully:', emailResult.messageId);
+        } else {
+          console.warn('❌ Failed to send appointment confirmation email:', emailResult.error);
+          // Don't fail the appointment creation if email fails
+        }
+      } catch (emailError) {
+        console.error('💥 Error sending appointment confirmation email:', emailError);
+        // Don't fail the appointment creation if email fails
+      }
+    } else {
+      console.log('⏭️ Skipping email notification - user not logged in');
+    }
 
     res.status(201).json({
       success: true,
@@ -768,6 +871,84 @@ app.get('/auth/verify', async (req, res) => {
   } catch (error) {
     console.error('User verification error:', error);
     res.status(500).json({ success: false, error: 'Token verification failed' });
+  }
+});
+
+// User profile update
+app.put('/auth/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Extract user ID from token (simple token format: user-{id}-{timestamp})
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 2 || tokenParts[0] !== 'user') {
+      return res.status(401).json({ error: 'Invalid token format' });
+    }
+
+    const userId = tokenParts[1];
+    const { firstName, lastName, phone } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: 'First name and last name are required' });
+    }
+
+    // Validate phone number if provided
+    if (phone) {
+      const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+      if (!phoneRegex.test(phone)) {
+        return res.status(400).json({ error: 'Please provide a valid US phone number' });
+      }
+    }
+
+    const db = admin.firestore();
+    const userRef = db.collection('users').doc(userId);
+    
+    // Create update object
+    const updateData = {
+      firstName,
+      lastName,
+      fullName: `${firstName} ${lastName}`,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    // Only update phone if provided
+    if (phone) {
+      updateData.phone = phone;
+    }
+
+    // Update user document
+    await userRef.update(updateData);
+
+    // Get the updated user data
+    const userDoc = await userRef.get();
+    
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userData = userDoc.data();
+
+    // Return the updated user data
+    res.json({
+      success: true,
+      user: {
+        uid: userDoc.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        fullName: userData.fullName,
+        phone: userData.phone || '',
+        role: userData.role,
+      }
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Server error while updating profile' });
   }
 });
 

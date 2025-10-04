@@ -109,7 +109,8 @@ const Header = ({ currentView, setCurrentView }) => {
 
   const navItems = [
     { label: 'Home', id: 'hero', action: () => handleNavigation('home') },
-    { label: 'Services', id: 'services', action: () => scrollToSection('services') },
+    { label: 'Services', id: 'services-two', action: () => scrollToSection('services-two') },
+    { label: 'Expertise', id: 'services', action: () => scrollToSection('services') },
     { label: 'Gallery', id: 'gallery', action: () => scrollToSection('gallery') },
     { label: 'Appointment', id: 'appointment', action: () => scrollToSection('appointment') }
   ];
@@ -122,6 +123,12 @@ const Header = ({ currentView, setCurrentView }) => {
         id: 'customer-dashboard', 
         action: () => handleNavigation('customer-dashboard'),
         isCustomer: true 
+      },
+      {
+        label: 'Profile Settings',
+        id: 'profile-settings',
+        action: () => handleNavigation('profile-settings'),
+        isCustomer: true
       }
     );
   }
@@ -229,7 +236,7 @@ const Header = ({ currentView, setCurrentView }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <h1>PNJ Auto Body</h1>
+              <h1>Next Gen</h1>
               <span>Professional Collision Repair</span>
             </motion.div>
 
@@ -381,7 +388,7 @@ const Header = ({ currentView, setCurrentView }) => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                   >
-                    <h2>PNJ Auto Body</h2>
+                    <h2>Next Gen</h2>
                     <p>Professional Collision Repair</p>
                     {user && user.role === 'admin' && (
                       <div className="mobile-admin-badge">
