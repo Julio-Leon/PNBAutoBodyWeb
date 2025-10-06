@@ -14,10 +14,23 @@ import {
   Palette,
   Zap
 } from 'lucide-react';
+import ServiceDetailsModal from './ServiceDetailsModal';
 import './Services.css';
 
 const ServicesTwo = () => {
   const [activeTab, setActiveTab] = useState('mechanic');
+  const [selectedService, setSelectedService] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCardClick = (service) => {
+    setSelectedService(service);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedService(null), 300);
+  };
 
   const mechanic = [
     {
@@ -392,12 +405,13 @@ const ServicesTwo = () => {
               {mechanic.map((service, index) => (
                 <motion.div 
                   key={service.id}
-                  className="service-card"
+                  className="service-card clickable"
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   whileHover={{ y: -10, scale: 1.02 }}
+                  onClick={() => handleCardClick(service)}
                 >
                   <div className="service-icon">
                     {service.icon}
@@ -407,36 +421,6 @@ const ServicesTwo = () => {
                   
                   <div className="service-features">
                     {service.features.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.included && <h4>What's Included:</h4>}
-                  <div className="service-features">
-                    {service.included && service.included.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.goodFor && <h4>Good For:</h4>}
-                  <div className="service-features">
-                    {service.goodFor && service.goodFor.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.addon && <h4>Addons:</h4>}
-                  <div className="service-features">
-                    {service.addon && service.addon.map((feature, idx) => (
                       <div key={idx} className="feature">
                         <CheckCircle size={16} />
                         <span>{feature}</span>
@@ -454,6 +438,10 @@ const ServicesTwo = () => {
                       <span>{service.warranty}</span>
                     </div>
                   </div>
+                  
+                  <button className="view-details-btn">
+                    View Full Details
+                  </button>
                 </motion.div>
               ))}
             </motion.div>
@@ -469,12 +457,13 @@ const ServicesTwo = () => {
               {bodywork.map((service, index) => (
                 <motion.div 
                   key={service.id}
-                  className="service-card"
+                  className="service-card clickable"
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   whileHover={{ y: -10, scale: 1.02 }}
+                  onClick={() => handleCardClick(service)}
                 >
                   <div className="service-icon">
                     {service.icon}
@@ -482,39 +471,8 @@ const ServicesTwo = () => {
                   <h3>{service.title}</h3>
                   <p>{service.description}</p>
                   
-                  <h4>Features:</h4>
                   <div className="service-features">
                     {service.features.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.included && <h4>What's Included:</h4>}
-                  <div className="service-features">
-                    {service.included && service.included.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.goodFor && <h4>Good For:</h4>}
-                  <div className="service-features">
-                    {service.goodFor && service.goodFor.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.addon && <h4>Add-Ons:</h4>}
-                  <div className="service-features">
-                    {service.addon && service.addon.map((feature, idx) => (
                       <div key={idx} className="feature">
                         <CheckCircle size={16} />
                         <span>{feature}</span>
@@ -532,6 +490,10 @@ const ServicesTwo = () => {
                       <span>{service.warranty}</span>
                     </div>
                   </div>
+                  
+                  <button className="view-details-btn">
+                    View Full Details
+                  </button>
                 </motion.div>
               ))}
             </motion.div>
@@ -547,12 +509,13 @@ const ServicesTwo = () => {
               {carWash.map((service, index) => (
                 <motion.div 
                   key={service.id}
-                  className="service-card"
+                  className="service-card clickable"
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   whileHover={{ y: -10, scale: 1.02 }}
+                  onClick={() => handleCardClick(service)}
                 >
                   <div className="service-icon">
                     {service.icon}
@@ -560,39 +523,8 @@ const ServicesTwo = () => {
                   <h3>{service.title}</h3>
                   <p>{service.description}</p>
 
-                  <h4>Features:</h4>
                   <div className="service-features">
                     {service.features.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.included && <h4>What's Included:</h4>}
-                  <div className="service-features">
-                    {service.included && service.included.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.goodFor && <h4>Good For:</h4>}
-                  <div className="service-features">
-                    {service.goodFor && service.goodFor.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.addon && <h4>Add-Ons:</h4>}
-                  <div className="service-features">
-                    {service.addon && service.addon.map((feature, idx) => (
                       <div key={idx} className="feature">
                         <CheckCircle size={16} />
                         <span>{feature}</span>
@@ -610,6 +542,10 @@ const ServicesTwo = () => {
                       <span>{service.warranty}</span>
                     </div>
                   </div>
+                  
+                  <button className="view-details-btn">
+                    View Full Details
+                  </button>
                 </motion.div>
               ))}
             </motion.div>
@@ -625,12 +561,13 @@ const ServicesTwo = () => {
               {wheelsAndTires.map((service, index) => (
                 <motion.div 
                   key={service.id}
-                  className="service-card"
+                  className="service-card clickable"
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   whileHover={{ y: -10, scale: 1.02 }}
+                  onClick={() => handleCardClick(service)}
                 >
                   <div className="service-icon">
                     {service.icon}
@@ -638,29 +575,8 @@ const ServicesTwo = () => {
                   <h3>{service.title}</h3>
                   <p>{service.description}</p>
                   
-                  <h4>Features:</h4>
                   <div className="service-features">
                     {service.features.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.included && <h4>What's Included:</h4>}
-                  <div className="service-features">
-                    {service.included && service.included.map((feature, idx) => (
-                      <div key={idx} className="feature">
-                        <CheckCircle size={16} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {service.goodFor && <h4>Good For:</h4>}
-                  <div className="service-features">
-                    {service.goodFor && service.goodFor.map((feature, idx) => (
                       <div key={idx} className="feature">
                         <CheckCircle size={16} />
                         <span>{feature}</span>
@@ -678,6 +594,10 @@ const ServicesTwo = () => {
                       <span>{service.warranty}</span>
                     </div>
                   </div>
+                  
+                  <button className="view-details-btn">
+                    View Full Details
+                  </button>
                 </motion.div>
               ))}
             </motion.div>
@@ -685,6 +605,13 @@ const ServicesTwo = () => {
           
         </div>
       </div>
+      
+      {/* Service Details Modal */}
+      <ServiceDetailsModal 
+        service={selectedService}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </section>
   );
 };

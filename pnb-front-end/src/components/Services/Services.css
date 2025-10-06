@@ -672,3 +672,66 @@
 .dark-mode .stat-info p {
   color: #94a3b8;
 }
+
+/* Clickable Card Styles */
+.service-card.clickable {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.service-card.clickable::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(29, 78, 216, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.service-card.clickable:hover::after {
+  opacity: 1;
+}
+
+/* View Details Button */
+.view-details-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+.view-details-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+
+.view-details-btn:active {
+  transform: translateY(0);
+}
+
+/* Prevent text selection on clickable cards */
+.service-card.clickable * {
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .view-details-btn {
+    font-size: 1rem;
+    padding: 0.875rem 1.75rem;
+  }
+}
+
