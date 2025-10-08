@@ -139,8 +139,10 @@ const ProfileSettings = () => {
         body: JSON.stringify({
           phone: formData.phone,
           email: formData.email,
-          firstName: dummyFirstName,
-          lastName: dummyLastName
+          // firstName: "Jesus",
+          // lastName: "Christ"
+          firstName: user?.fullName.split(" ")[0],
+          lastName: user?.fullName.split(" ")[1]
         })
       });
 
