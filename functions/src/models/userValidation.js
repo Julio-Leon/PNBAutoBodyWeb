@@ -70,17 +70,12 @@ class UserValidation {
    */
   static updateProfile() {
     return [
-      body('firstName')
+      body('email')
         .optional()
         .trim()
-        .isLength({ min: 2, max: 50 })
-        .withMessage('First name must be between 2 and 50 characters'),
-      
-      body('lastName')
-        .optional()
-        .trim()
-        .isLength({ min: 2, max: 50 })
-        .withMessage('Last name must be between 2 and 50 characters'),
+        .isEmail()
+        .withMessage('Valid email is required')
+        .normalizeEmail(),
       
       body('phone')
         .optional()
@@ -159,11 +154,4 @@ class UserValidation {
   }
 }
 
-module.exports = {
-  validateUser: UserValidation.registerUser,
-  validateLogin: UserValidation.loginUser,
-  validatePasswordChange: UserValidation.changePassword,
-  validateUserUpdate: UserValidation.updateProfile,
-  validateForgotPassword: UserValidation.forgotPassword,
-  validateResetPassword: UserValidation.resetPassword
-};
+module.exports = UserValidation;

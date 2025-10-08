@@ -228,15 +228,53 @@ const getMe = asyncHandler(async (req, res) => {
  */
 const updateProfile = asyncHandler(async (req, res) => {
   try {
-    const { firstName, lastName, phone } = req.body;
+    const { phone, email, firstName, lastName } = req.body;
+    
+    // Log the request body for debugging
+    console.log('Profile update request body:', req.body);
     
     const updateData = {
       updatedAt: new Date()
     };
+    
+    // IMPORTANT: We should only update firstName and lastName if they are explicitly provided
+    // Otherwise, we keep the existing values to prevent accidental name changes
 
-    if (firstName) updateData.firstName = firstName;
-    if (lastName) updateData.lastName = lastName;
     if (phone !== undefined) updateData.phone = phone;
+    
+    // Only update name fields if they are explicitly provided AND not empty
+    if (firstName && firstName.trim() !== '') updateData.firstName = firstName;
+    if (lastName && lastName.trim() !== '') updateData.lastName = lastName;
+
+    // If email is provided and different from current email, update it
+    let emailUpdated = false;
+    if (email && email !== req.user.email) {
+      try {
+        // Check if email is already in use
+        const existingUserWithEmail = await usersCollection.where('email', '==', email).get();
+        if (!existingUserWithEmail.empty && existingUserWithEmail.docs[0].id !== req.user.uid) {
+          return res.status(400).json({
+            success: false,
+            error: 'Email already in use by another account'
+          });
+        }
+
+        // Update email in Firebase Auth
+        await getAuth().updateUser(req.user.uid, { email });
+        
+        // Update email in Firestore
+        updateData.email = email;
+        emailUpdated = true;
+        
+        console.log(`Email updated for user ${req.user.uid} from ${req.user.email} to ${email}`);
+      } catch (firebaseError) {
+        console.error('Firebase email update error:', firebaseError);
+        return res.status(400).json({
+          success: false,
+          error: firebaseError.message || 'Failed to update email'
+        });
+      }
+    }
 
     await usersCollection.doc(req.user.uid).update(updateData);
 
@@ -254,7 +292,10 @@ const updateProfile = asyncHandler(async (req, res) => {
         phone: userData.phone,
         role: userData.role
       },
-      message: 'Profile updated successfully'
+      emailUpdated: emailUpdated,
+      message: emailUpdated ? 
+        'Profile updated successfully. You will need to login again with your new email.' : 
+        'Profile updated successfully'
     });
   } catch (error) {
     console.error('Update profile error:', error);

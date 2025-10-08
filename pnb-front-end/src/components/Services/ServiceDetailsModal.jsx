@@ -36,7 +36,7 @@ const ServiceDetailsModal = ({ service, isOpen, onClose }) => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             style={{
               position: 'fixed',
               top: '50%',
@@ -44,7 +44,7 @@ const ServiceDetailsModal = ({ service, isOpen, onClose }) => {
               transform: 'translate(-50%, -50%)'
             }}
           >
-            <button className="modal-close-btn" onClick={onClose}>
+            <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
               <X size={24} />
             </button>
 
@@ -56,21 +56,22 @@ const ServiceDetailsModal = ({ service, isOpen, onClose }) => {
               <p>{service.description}</p>
             </div>
 
-            <div className="modal-content">
-              {/* Features Section */}
-              {service.features && service.features.length > 0 && (
-                <div className="modal-section">
-                  <h3>Features</h3>
-                  <div className="feature-list">
-                    {service.features.map((feature, idx) => (
-                      <div key={idx} className="feature-item">
-                        <CheckCircle size={18} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
+            <div className="modal-content-wrapper features">
+              <div className="modal-content">
+                {/* Features Section */}
+                {service.features && service.features.length > 0 && (
+                  <div className="modal-section">
+                    <h3>Features</h3>
+                    <div className="feature-list">
+                      {service.features.map((feature, idx) => (
+                        <div key={idx} className="feature-item">
+                          <CheckCircle size={18} />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* What's Included Section */}
               {service.included && service.included.length > 0 && (
@@ -133,6 +134,7 @@ const ServiceDetailsModal = ({ service, isOpen, onClose }) => {
                     <span className="value">{service.warranty}</span>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
           </motion.div>
