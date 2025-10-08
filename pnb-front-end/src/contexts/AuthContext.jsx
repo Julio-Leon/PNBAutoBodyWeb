@@ -138,12 +138,25 @@ export const AuthProvider = ({ children }) => {
 
   const userLogin = async (email, password) => {
     try {
+      // Ensure email is properly trimmed and lowercased for consistency
+      const trimmedEmail = email.trim().toLowerCase();
+      
+      console.log('Attempting login with email:', trimmedEmail);
+      
+      // If there's a different email in localStorage that was recently updated,
+      // log a warning since we might be using an outdated email
+      const storedEmail = localStorage.getItem('updatedEmail');
+      if (storedEmail && storedEmail.toLowerCase() !== trimmedEmail.toLowerCase()) {
+        console.warn('WARNING: Login attempt with different email than the recently updated one');
+        console.warn(`Login with: ${trimmedEmail}, Updated to: ${storedEmail}`);
+      }
+      
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: trimmedEmail, password })
       });
 
       if (response.ok) {

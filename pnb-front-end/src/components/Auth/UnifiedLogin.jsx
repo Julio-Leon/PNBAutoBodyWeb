@@ -1,14 +1,28 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Shield, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Shield, User, AlertCircle, CheckCircle, Mail } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import './UnifiedLogin.css';
+import './EmailUpdateNotice.css';
 
 const UnifiedLogin = ({ onClose, onSwitchToRegister }) => {
   const [loginType, setLoginType] = useState('customer'); // Default to customer login
+  // Get updated email from multiple possible sources
+  const getUpdatedEmail = () => {
+    // Check URL parameters first
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailFromUrl = urlParams.get('email');
+    
+    // Then check sessionStorage and localStorage
+    const emailFromSession = sessionStorage.getItem('updatedEmail');
+    const emailFromLocal = localStorage.getItem('updatedEmail');
+    
+    return emailFromUrl || emailFromSession || emailFromLocal || '';
+  };
+  
   const [credentials, setCredentials] = useState({
     username: '',
-    email: '',
+    email: getUpdatedEmail(),
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +35,48 @@ const UnifiedLogin = ({ onClose, onSwitchToRegister }) => {
   useEffect(() => {
     console.log('UnifiedLogin: User state:', user);
     console.log('UnifiedLogin: Auth loading:', authLoading);
+    
+    // Check for email update from multiple sources
+    const updatedEmail = getUpdatedEmail();
+    
+    if (updatedEmail) {
+      console.log('UnifiedLogin: Found updated email:', updatedEmail);
+      
+      // Set the email in the form
+      setCredentials(prev => ({
+        ...prev,
+        email: updatedEmail
+      }));
+      
+      // Force customer login type when email is present
+      setLoginType('customer');
+      
+      // Show a helpful message to the user
+      setSuccess('Your email has been updated. Please log in with your new email address: ' + updatedEmail);
+      
+      // Clean up storage but don't remove from localStorage yet
+      // (in case the user refreshes or there's a problem)
+      sessionStorage.removeItem('updatedEmail');
+      
+      // Only clear localStorage after a successful login or after 10 minutes
+      const emailUpdateTime = parseInt(localStorage.getItem('emailUpdateTime') || '0', 10);
+      const tenMinutesMs = 10 * 60 * 1000;
+      
+      if (Date.now() - emailUpdateTime > tenMinutesMs) {
+        localStorage.removeItem('updatedEmail');
+        localStorage.removeItem('emailUpdateTime');
+      }
+    }
+    
+    // Check URL for newEmail flag
+    if (window.location.search.includes('newEmail=true')) {
+      setSuccess('Your email has been updated. Please log in with your new email address.');
+      
+      // Clean up URL, but preserve other parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('newEmail');
+      window.history.replaceState({}, document.title, url);
+    }
   }, [user, authLoading]);
 
   const handleInputChange = (e) => {
@@ -90,6 +146,11 @@ const UnifiedLogin = ({ onClose, onSwitchToRegister }) => {
       if (result.success) {
         setSuccess(`${loginType === 'admin' ? 'Admin' : 'Customer'} login successful! ${loginType === 'admin' ? 'Redirecting to dashboard...' : 'Welcome back.'}`);
         
+        // Clear any stored updated email data on successful login
+        localStorage.removeItem('updatedEmail');
+        localStorage.removeItem('emailUpdateTime');
+        sessionStorage.removeItem('updatedEmail');
+        
         // Handle different close behaviors
         if (loginType === 'admin') {
           // Admin login - let the app handle the redirect
@@ -113,6 +174,17 @@ const UnifiedLogin = ({ onClose, onSwitchToRegister }) => {
 
   return (
     <div className="unified-login">
+      {/* Email update notice */}
+      {getUpdatedEmail() && (
+        <div className="email-update-notice">
+          <Mail className="icon" size={18} />
+          <div className="message">
+            Your email has been updated. Please log in with your new email address: 
+            <strong> {getUpdatedEmail()}</strong>
+          </div>
+        </div>
+      )}
+      
       <motion.div 
         className="unified-login-card"
         initial={{ opacity: 0, y: 50 }}

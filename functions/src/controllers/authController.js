@@ -115,7 +115,11 @@ const register = asyncHandler(async (req, res) => {
  */
 const login = asyncHandler(async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    
+    // Normalize email (trim and lowercase)
+    email = email.trim().toLowerCase();
+    console.log('Login attempt with normalized email:', email);
 
     // Get user from Firestore
     const userSnapshot = await usersCollection.where('email', '==', email).get();
@@ -228,10 +232,17 @@ const getMe = asyncHandler(async (req, res) => {
  */
 const updateProfile = asyncHandler(async (req, res) => {
   try {
-    const { phone, email, firstName, lastName } = req.body;
+    let { phone, email, firstName, lastName } = req.body;
+    
+    // Normalize email if provided
+    if (email) {
+      email = email.trim().toLowerCase();
+    }
     
     // Log the request body for debugging
     console.log('Profile update request body:', req.body);
+    console.log('Current user email:', req.user.email);
+    console.log('New normalized email:', email);
     
     const updateData = {
       updatedAt: new Date()
@@ -248,7 +259,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
     // If email is provided and different from current email, update it
     let emailUpdated = false;
-    if (email && email !== req.user.email) {
+    if (email && email.toLowerCase() !== (req.user.email || '').toLowerCase()) {
       try {
         // Check if email is already in use
         const existingUserWithEmail = await usersCollection.where('email', '==', email).get();

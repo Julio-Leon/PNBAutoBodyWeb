@@ -117,18 +117,31 @@ const ProfileSettings = () => {
         return;
       }
 
-      // Since we're getting name requirement errors, create dummy name fields
-      const dummyFirstName = "User";
-      const dummyLastName = "Account";
+      // Extract names properly or use dummy values if they don't exist
+      let firstName = "User";
+      let lastName = "Account";
       
-      // Include dummy name fields to satisfy backend validation
-      console.log('Name requirement error detected, retrying with dummy name fields');
+      // Only try to use fullName if it exists and contains at least one space
+      if (user?.fullName && user.fullName.includes(" ")) {
+        const nameParts = user.fullName.split(" ");
+        firstName = nameParts[0] || "User";
+        lastName = nameParts.slice(1).join(" ") || "Account"; // Join all remaining parts as lastName
+      }
+      
+      // Log detailed submission data for debugging
+      console.log('PROFILE UPDATE - Current user email:', user?.email);
+      console.log('PROFILE UPDATE - New email to submit:', formData.email);
+      console.log('PROFILE UPDATE - Email changed:', user?.email !== formData.email);
+      console.log('PROFILE UPDATE - Using names:', firstName, lastName);
       console.log('Submitting profile update with data:', {
-        phone: formData.phone,
+        phone: formData.phone, 
         email: formData.email,
-        firstName: dummyFirstName,
-        lastName: dummyLastName
+        firstName: firstName,
+        lastName: lastName
       });
+      
+      // Ensure email is properly trimmed and lowercase to avoid comparison issues
+      const trimmedEmail = formData.email.trim().toLowerCase();
       
       const response = await fetch(`${API_BASE_URL}/auth/profile`, {
         method: 'PUT',
@@ -138,15 +151,18 @@ const ProfileSettings = () => {
         },
         body: JSON.stringify({
           phone: formData.phone,
-          email: formData.email,
-          // firstName: "Jesus",
-          // lastName: "Christ"
-          firstName: user?.fullName.split(" ")[0],
-          lastName: user?.fullName.split(" ")[1]
+          email: trimmedEmail, // Use the trimmed email
+          firstName: firstName,
+          lastName: lastName
         })
       });
 
       const data = await response.json();
+      
+      // Debug the server response
+      console.log('PROFILE UPDATE - Server response:', data);
+      console.log('PROFILE UPDATE - Email updated flag:', data.emailUpdated);
+      console.log('PROFILE UPDATE - Response user email:', data.data?.email);
 
       // Log detailed error information for debugging
       if (!response.ok) {
@@ -186,20 +202,37 @@ const ProfileSettings = () => {
       }
       
       if (response.ok) {
+        // ALWAYS check if email was modified regardless of what the backend reports
+        const isEmailModified = trimmedEmail.toLowerCase() !== (user?.email || '').toLowerCase();
+        const isPhoneModified = formData.phone !== user?.phone;
         
-        // If email was updated, user needs to log in again
-        if (data.emailUpdated) {
+        // If email was modified OR the backend reports it was updated, always force login
+        if (isEmailModified || data.emailUpdated) {
+          console.log('Email change detected! Forcing logout and redirect to login page');
+          console.log(`From: ${user?.email} To: ${trimmedEmail}`);
+          console.log('Backend emailUpdated flag:', data.emailUpdated);
+          
+          // Make sure the success message is shown
           setMessage({ 
             type: 'success', 
             text: 'Email updated successfully! You will be redirected to the login page in a few seconds.'
           });
           
-          // Clear token to force re-login
+          // Important: Store the new email in multiple places to ensure it persists
+          sessionStorage.setItem('updatedEmail', trimmedEmail);
+          localStorage.setItem('updatedEmail', trimmedEmail);
+          
+          // Store the timestamp of when the email was updated
+          localStorage.setItem('emailUpdateTime', Date.now().toString());
+          
+          // Clear token to force re-login with the new email
           setTimeout(() => {
             localStorage.removeItem('userToken');
-            window.location.href = '/';  // Redirect to home/login page
+            // Use replaceState to ensure the URL parameters are set correctly
+            window.history.replaceState({}, document.title, '/?newEmail=true');
+            window.location.href = '/?newEmail=true&email=' + encodeURIComponent(trimmedEmail);
           }, 3000);
-        } else {
+        } else if (isPhoneModified) {
           setMessage({ 
             type: 'success', 
             text: 'Phone number updated successfully! This information will be used for appointment notifications.'
@@ -214,8 +247,24 @@ const ProfileSettings = () => {
               window.location.reload();
             }
           }, 1500);
+        } else {
+          setMessage({ 
+            type: 'success', 
+            text: 'Profile updated successfully!'
+          });
+          
+          // Regular profile update - just refresh
+          setTimeout(() => {
+            if (redirectToAppointment) {
+              // Redirect back to appointment page
+              window.location.hash = '#appointment';
+            } else {
+              window.location.reload();
+            }
+          }, 1500);
         }
-      } else {
+      }
+      else {
         console.error('Profile update failed:', data);
         setMessage({ 
           type: 'error', 
@@ -253,7 +302,7 @@ const ProfileSettings = () => {
         <User size={18} className="name-icon" />
         <div className="name-label">Name:</div>
         <div className="name-value">
-          {user?.fullName || 'Not available'}
+          {user?.fullName || user?.email || 'Not available'}
         </div>
       </div>
 

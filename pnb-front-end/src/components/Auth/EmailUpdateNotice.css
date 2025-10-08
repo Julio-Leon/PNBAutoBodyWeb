@@ -1,0 +1,26 @@
+.email-update-notice {
+  background-color: rgba(20, 184, 166, 0.15);
+  border-left: 4px solid rgb(20, 184, 166);
+  color: rgb(20, 184, 166);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.email-update-notice .icon {
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.email-update-notice .message {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dark-mode .email-update-notice {
+  background-color: rgba(20, 184, 166, 0.1);
+  color: rgb(45, 212, 191);
+}
