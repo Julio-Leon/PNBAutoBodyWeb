@@ -19,12 +19,14 @@ import {
   BarChart3,
   Check,
   CheckCheck,
-  History
+  History,
+  Briefcase
 } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
 import AppointmentModal from './AppointmentModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import JobDashboard from './JobDashboard';
 import './Management.css';
 
 const Management = () => {
@@ -794,6 +796,13 @@ const Management = () => {
             Active Appointments
           </button>
           <button
+            className={`tab-btn ${activeSection === 'jobs' ? 'active' : ''}`}
+            onClick={() => setActiveSection('jobs')}
+          >
+            <Briefcase className="tab-icon" />
+            Jobs
+          </button>
+          <button
             className={`tab-btn ${activeSection === 'history' ? 'active' : ''}`}
             onClick={() => {
               setActiveSection('history');
@@ -817,6 +826,16 @@ const Management = () => {
               transition={{ duration: 0.3 }}
             >
               {renderAppointments()}
+            </motion.div>
+          ) : activeSection === 'jobs' ? (
+            <motion.div
+              key="jobs"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <JobDashboard />
             </motion.div>
           ) : (
             <motion.div
